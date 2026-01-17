@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.UUID;
 
 public class User {
-    private String uuid;
+    private String id;
     private String username;
     private String password;
     private String email;
@@ -15,7 +15,15 @@ public class User {
         username = u;
         password = p;
         date_joined = (Date.from(Instant.now()));
-        uuid = String.valueOf(UUID.randomUUID());
+        id = String.valueOf(UUID.randomUUID());
+    }
+
+    public User (String i, String u, String p, String e, Date dj) {
+        username = u;
+        password = p;
+        date_joined = dj;
+        id = i;
+        email = e;
     }
 
     // setters
@@ -36,12 +44,17 @@ public class User {
     public Date getDate_joined() {
         return date_joined;
     }
-    public String getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
     public String getPassword() {
         return password;
     }
 
+    public String toString() {
+        return (getUsername()+"\n"+
+                "> EMAIL: "+getEmail()+"\n"+
+                "> ID: "+getId()+"\n");
+    }
 
 }
