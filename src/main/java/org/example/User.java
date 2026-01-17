@@ -11,6 +11,7 @@ public class User {
     private String email;
     private Date date_joined;
 
+    // minimum user constructor
     public User (String u, String p) {
         username = u;
         password = p;
@@ -18,6 +19,7 @@ public class User {
         id = String.valueOf(UUID.randomUUID());
     }
 
+    // complete user constructor, used for database operations
     public User (String i, String u, String p, String e, Date dj) {
         username = u;
         password = p;
@@ -51,6 +53,7 @@ public class User {
         return password;
     }
 
+    // public toString method
     public String toString() {
         return (getUsername()+"\n"+
                 "> EMAIL: "+getEmail()+"\n"+

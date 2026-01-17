@@ -9,7 +9,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 
+// an object for interacting with the database
 public class UserDAO {
+
+    // variables storing the path of the database, usernae, and password
     private String url = "jdbc:mysql://localhost:3307/testdb?useSSL=false&allowPublicKeyRetrieval=true";
     private String dbuser = "root";
     private String password = "passkey";
@@ -20,71 +23,28 @@ public class UserDAO {
         this.password = password;
     }
 
+    // establish and return a connection to the database
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, dbuser, password);
     }
 
-    public ArrayList<User> fetchAllUsers() {
-        ArrayList<User> allUsers = new ArrayList<User>();
+    public User fetchUser(String username, String password) {
         try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE username = ? AND password = SHA2(?, 256)");
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+
             ResultSet result = stmt.executeQuery();
-            while (result.next()) {
-                allUsers.add(new User(result.getString("id"),
+            if (result.next()) {
+                return new User(result.getString("id"),
                         result.getString("username"),
                         result.getString("password"),
                         result.getString("email"),
                         result.getDate("date_joined")
-                            ));
+                );
+            } else {
+                return null;
             }
-            return allUsers;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return allUsers;
-    }
-
-    public ArrayList<Commission> fetchAllComms() {
-        ArrayList<Commission> allComms = new ArrayList<Commission>();
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Comms");
-            ResultSet result = stmt.executeQuery();
-
-            while (result.next()) {
-                allComms.add(new Commission(
-                        result.getString("id"),
-                                result.getString("artist_id"),
-                                result.getString("commissioner_handle"),
-                                result.getString("platform"),
-                                result.getDate("date_ordered"),
-                                result.getDate("date_expected"),
-                                result.getString("size"),
-                                (result.getBigDecimal("cost")).doubleValue(),
-                                result.getString("description"),
-                                result.getString("reference_link"),
-                                result.getBoolean("payment_received")
-                ));
-            }
-            return allComms;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return allComms;
-    }
-
-    public User fetchUser(String id) {
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE id = ?");
-            stmt.setString(1, id);
-
-            ResultSet result = stmt.executeQuery();
-            result.next();
-            return new User(result.getString("id"),
-                    result.getString("username"),
-                    result.getString("password"),
-                    result.getString("email"),
-                    result.getDate("date_joined")
-            );
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -93,7 +53,7 @@ public class UserDAO {
 
     public void addUser(User user) {
         try (Connection conn = getConnection()) {
-            String add_to_users = "INSERT INTO Users (id, username, password, email, date_joined) VALUES (?, ?, ?, ?, ?)";
+            String add_to_users = "INSERT INTO Users (id, username, password, email, date_joined) VALUES (?, ?, SHA2(?, 256), ?, ?)";
 
             PreparedStatement prepped_statement = conn.prepareStatement(add_to_users);
 
@@ -147,12 +107,13 @@ public class UserDAO {
         }
     }
 
+    // start up the database. If the
     public void rundb() {
         try (Connection conn = getConnection()) {
             String create_users_table = "CREATE TABLE IF NOT EXISTS Users (" +
-                    "id VARCHAR(90) PRIMARY KEY, " +
-                    "username VARCHAR(30), " +
-                    "password VARCHAR(30), " +
+                    "id VARCHAR(90) NOT NULL UNIQUE PRIMARY KEY, " +
+                    "username VARCHAR(30) UNIQUE, " +
+                    "password VARCHAR(64), " +
                     "email VARCHAR(30), " +
                     "date_joined DATE" +
                     ")";
@@ -176,23 +137,6 @@ public class UserDAO {
             create_users_if_not_exists.executeUpdate();
             create_comms_if_not_exists.executeUpdate();
 
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void eraseEverything() {
-        try (Connection conn = getConnection()) {
-            String dropComms = "DROP TABLE Comms";
-            String dropUsers = "DROP TABLE Users";
-
-            PreparedStatement dcps = conn.prepareStatement(dropComms);
-            PreparedStatement dups = conn.prepareStatement(dropUsers);
-
-            dcps.executeUpdate();
-            dups.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();

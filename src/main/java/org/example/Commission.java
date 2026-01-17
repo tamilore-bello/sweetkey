@@ -1,6 +1,5 @@
 package org.example;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -8,7 +7,6 @@ import java.util.Date;
 import java.util.UUID;
 
 public class Commission {
-
     private String id;
     private String artist_id;
     private String commissioner_handle;
@@ -21,6 +19,7 @@ public class Commission {
     private String reference_link;
     private Boolean payment_received;
 
+    // minimum constructor
     public Commission(String artistID, String commissionerHandle, String sizeOf, String referenceLink, Boolean paymentReceived) {
         artist_id = artistID;
         id = (UUID.randomUUID()).toString();
@@ -35,6 +34,7 @@ public class Commission {
         payment_received = paymentReceived;
     }
 
+    // complete constructor, used for database operations
     public Commission(String id, String artist_id, String commissioner_handle, String platform, Date date_ordered, Date date_expected, String size, Double cost, String description, String reference_link, Boolean payment_received) {
         this.id = id;
         this.artist_id = artist_id;
@@ -101,11 +101,11 @@ public class Commission {
         this.date_ordered = date_ordered;
     }
     public void setPlatform(String platform) {this.platform = platform;}
-
     public void setCommissioner_handle(String commissioner_handle) {
         this.commissioner_handle = commissioner_handle;
     }
 
+    // public toString method
     public String toString() {
 
         return ("> COMMISSION ID: "+getId()+"\n"+
@@ -117,11 +117,6 @@ public class Commission {
                 "> SIZE "+getSize()+"\n"+
                 "> COST "+getCost()+"\n"
         );
-    }
-
-    public String convertDateFormat (Date date) {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                .format(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
     }
 }
 
