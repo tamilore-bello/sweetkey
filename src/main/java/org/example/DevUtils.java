@@ -64,7 +64,8 @@ public class DevUtils {
                                 (result.getBigDecimal("cost")).doubleValue(),
                                 result.getString("description"),
                                 result.getString("reference_link"),
-                                result.getBoolean("payment_received")
+                                result.getBoolean("payment_received"),
+                                result.getString("status")
                 ));
             }
             return allComms;

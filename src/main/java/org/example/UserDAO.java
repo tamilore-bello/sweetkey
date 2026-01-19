@@ -83,8 +83,9 @@ public class UserDAO {
                     "cost, " +
                     "description, " +
                     "reference_link, " +
-                    "payment_received" +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "payment_received," +
+                    "status" +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     ;
 
             PreparedStatement prepped_statement = conn.prepareStatement(add_to_comms);
@@ -99,8 +100,11 @@ public class UserDAO {
             prepped_statement.setString(9, commission.getDescription());
             prepped_statement.setString(10, commission.getReference_link());
             prepped_statement.setBoolean(11, commission.getPaymentReceived());
+            prepped_statement.setString(12, commission.getStatus());
 
-        prepped_statement.executeUpdate();
+
+
+            prepped_statement.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -129,6 +133,7 @@ public class UserDAO {
                     "description VARCHAR(100), " +
                     "reference_link VARCHAR(120), " +
                     "payment_received BOOLEAN DEFAULT FALSE, " +
+                    "status VARCHAR(30), " +
                     "FOREIGN KEY (artist_id) REFERENCES Users(id)" +
                     ")";
             PreparedStatement create_users_if_not_exists = conn.prepareStatement(create_users_table);

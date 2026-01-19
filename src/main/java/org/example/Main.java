@@ -8,15 +8,18 @@ import org.example.*;
 void main() {
     // get the database up and running ! we create a UserDAO object, through which we can access various
     // database methods. The first thing we do is run the database.
-     UserDAO ud = new UserDAO();
+    DevUtils du = new DevUtils();
+    UserDAO ud = new UserDAO();
      ud.rundb();
 
      // for prototyping and development purposes, we use the internal methods to print all users and all
      // commissions
      printAllUsers();
      printAllComms();
-
+    // addUser();
      welcomeUser();
+
+
 }
 
 // all the current user to log in
@@ -34,6 +37,7 @@ public void welcomeUser() {
     if (user != null) {
         System.out.println("\nWELCOME "+user.getUsername());
         System.out.println(user);
+        addCommission(user);
     } else {
         System.out.println("INCORRECT CREDENTIALS");
     }
@@ -59,13 +63,12 @@ public void printAllComms() {
     }
 }
 
-public void addCommission() {
+// TODO
+// if a user object is fabricated then this is no longer secure and we can add random commissions to users.
+public void addCommission(User user) {
     Scanner scanner = new Scanner(System.in);
     UserDAO ud = new UserDAO();
-
-    System.out.println("ENTER THE USER ID OF THE ARTIST: ");
-    String ai = scanner.nextLine();
-
+    String ai = user.getId();
     System.out.println("ENTER THE COMMISSIONER'S HANDLE: ");
     String ch = scanner.nextLine();
     System.out.println("ENTER THE SIZE OF THE COMMISSION: ");
@@ -75,6 +78,7 @@ public void addCommission() {
     System.out.println("HAS PAYMENT BEEN RECEIVED?: ");
     Boolean b = scanner.nextBoolean();
 
+    // OF COURSE, we can add more fields and scan in responses.
     Commission commission = new Commission( ai,
             ch,
             s,
