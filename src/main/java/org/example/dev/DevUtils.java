@@ -1,11 +1,10 @@
-package org.example;
+package org.example.dev;
 
-import java.math.BigDecimal;
+import org.example.Commission;
+import org.example.User;
+
 import java.sql.*;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class DevUtils {
     private String url = "jdbc:mysql://localhost:3307/testdb?useSSL=false&allowPublicKeyRetrieval=true";

@@ -6,26 +6,17 @@ import java.util.*;
 import org.example.*;
 
 import javax.swing.*;
+static ViewModel vm = new ViewModel();
 
 void main() {
     // get the database up and running ! we create a UserDAO object, through which we can access various
     // database methods. The first thing we do is run the database.
-    DevUtils du = new DevUtils();
-    UserDAO ud = new UserDAO();
-    ud.rundb();
-
-     // for prototyping and development purposes, we use the internal methods to print all users and all
-     // commissions
-     //printAllUsers();
-     //printAllComms();
-    // addUser();
-     //welcomeUser();
-
+    ViewModel vm = new ViewModel();
     swingUI();
 }
 
 
-public void swingUI() {
+private void swingUI() {
     Font defaultFont = new Font("SF Pro Rounded", Font.PLAIN, 16);
     UIManager.put("Label.font", defaultFont);
     JFrame jframe = new JFrame(" ♡ ✿ sweetkey ✿ ♡");
@@ -37,10 +28,27 @@ public void swingUI() {
     jframe.setContentPane(panel);
 
 
+    JPanel afterpanel = getWelcomeGroup();
+    afterpanel.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
     // below is components inside the frame !
 
     // panel for welcome header + log in , everything except
     // header and footer basically
+    JPanel welcomeGroup = getLoginGroup(panel, jframe, afterpanel);
+
+    // add the center container to the overarching panel
+    panel.add(Box.createVerticalGlue());
+    panel.add(welcomeGroup);
+    panel.add(Box.createVerticalGlue());
+    panel.add(Box.createVerticalGlue());
+
+    // fixes to the frame itself
+    jframe.setBounds(200, 100, 100, 100);
+    jframe.setSize(600,800);
+    jframe.setVisible(true);
+}
+
+private static JPanel getLoginGroup(JPanel panel, JFrame jframe, JPanel afterpanel) {
     JPanel group = new JPanel();
     group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
     group.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -94,8 +102,12 @@ public void swingUI() {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("click registered! "+Date.from(Instant.now()));
+
+            panel.setVisible(false);
+            jframe.setContentPane(afterpanel);
         }
     });
+
     // adding everything to the center container
     group.add(header_row);
     group.add(Box.createRigidArea(new Dimension(0, 20))); // 20px vertical space
@@ -105,102 +117,16 @@ public void swingUI() {
     group.add(password_row);
     group.add(Box.createRigidArea(new Dimension(0, 15))); // space between header and username
     group.add(buttonRow);
-
-    // addint the center container to the overarching panel
-    panel.add(Box.createVerticalGlue());
-    panel.add(group);
-    panel.add(Box.createVerticalGlue());
-    panel.add(Box.createVerticalGlue());
-
-    // fixes to the frame itself
-    jframe.setBounds(200, 100, 100, 100);
-    jframe.setSize(600,800);
-    jframe.setVisible(true);
+    return group;
 }
+private static JPanel getWelcomeGroup() {
+    JPanel afterpanel = new JPanel();
+    afterpanel.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
 
-// all the current user to log in
-public void welcomeUser() {
-    Scanner scanner = new Scanner(System.in);
-    UserDAO ud = new UserDAO();
-
-    System.out.println("------ LOGIN ------ ");
-    System.out.println("ENTER USERNAME: ");
-    String username = scanner.nextLine();
-    System.out.println("ENTER PASSWORD: ");
-    String password = scanner.nextLine();
-
-    User user = ud.fetchUser(username, password);
-    if (user != null) {
-        System.out.println("\nWELCOME "+user.getUsername());
-        System.out.println(user);
-        addCommission(user);
-    } else {
-        System.out.println("INCORRECT CREDENTIALS");
-    }
-}
-
-@InternalMethod
-@Deprecated
-public void printAllUsers() {
-    DevUtils devUtils = new DevUtils();
-    System.out.println("------ ALL USERS ------ ");
-    for (User i : devUtils.fetchAllUsers_INTERNAL()) {
-        System.out.println(i);
-    }
+    return afterpanel;
 }
 
 
-@InternalMethod
-@Deprecated
-public void printAllComms() {
-    DevUtils devUtils = new DevUtils();
-    System.out.println("------ ALL COMMISSIONS ------ ");
-    for (Commission i : devUtils.fetchAllComms_INTERNAL()) {
-        System.out.println(i);
-    }
-}
-
-// TODO
-// if a user object is fabricated then this is no longer secure and we can add random commissions to users.
-public void addCommission(User user) {
-    Scanner scanner = new Scanner(System.in);
-    UserDAO ud = new UserDAO();
-    String ai = user.getId();
-    System.out.println("ENTER THE COMMISSIONER'S HANDLE: ");
-    String ch = scanner.nextLine();
-    System.out.println("ENTER THE SIZE OF THE COMMISSION: ");
-    String s = scanner.nextLine();
-    System.out.println("ENTER THE LINK TO THE REFERENCE: ");
-    String r = scanner.nextLine();
-    System.out.println("HAS PAYMENT BEEN RECEIVED?: ");
-    Boolean b = scanner.nextBoolean();
-
-    // OF COURSE, we can add more fields and scan in responses.
-    Commission commission = new Commission( ai,
-            ch,
-            s,
-            r,
-            b);
-    ud.addComm(commission);
-}
-
-public void addUser() {
-    Scanner scanner = new Scanner(System.in);
-    String username;
-    String password;
-
-    System.out.println("ENTER USERNAME");
-    username = scanner.nextLine();
-    System.out.println("ENTER PASSWORD ");
-    password = scanner.nextLine();
-
-    User user = new User(username, password);
-
-    UserDAO ud = new UserDAO();
-    ud.rundb();
-    ud.addUser(user);
-
-}
 
 
 
