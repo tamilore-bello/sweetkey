@@ -4,24 +4,21 @@ import java.util.Date;
 import java.util.UUID;
 
 public class User {
-    private String id;
+    private final String id;
     private String username;
-    private String password;
     private String email;
-    private Date date_joined;
+    private final Date date_joined;
 
     // minimum user constructor
     public User (String u, String p) {
         username = u;
-        password = p;
         date_joined = (Date.from(Instant.now()));
         id = String.valueOf(UUID.randomUUID());
     }
 
     // complete user constructor, used for database operations
-    public User (String i, String u, String p, String e, Date dj) {
+    public User (String i, String u, String e, Date dj) {
         username = u;
-        password = p;
         date_joined = dj;
         id = i;
         email = e;
@@ -47,9 +44,6 @@ public class User {
     }
     public String getId() {
         return id;
-    }
-    public String getPassword() {
-        return password;
     }
 
     // public toString method

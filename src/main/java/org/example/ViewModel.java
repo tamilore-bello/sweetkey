@@ -3,28 +3,21 @@ package org.example;
 import org.example.dev.DevUtils;
 import org.example.dev.InternalMethod;
 
-import java.security.SecureRandom;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class ViewModel {
     UserDAO ud = new UserDAO();
     DevUtils devUtils = new DevUtils();
 
-    // password hashing
-    public void pretzel () {
-        SecureRandom random = new SecureRandom();
-        byte[] salt = new byte[16];
-        random.nextBytes(salt);
-    }
-
-    @Deprecated
-    public void welcomeUser(String username, String password) {
+    public void welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
-        User user = ud.fetchUser(username, password);
-        if (user != null) {
-            System.out.println("\nWELCOME "+user.getUsername());
+        byte[][] saltyMix = ud.fetchSaltAndHash(username);
+
+        if (AuthUtils.validateUserAuth(password, saltyMix[0], saltyMix[1])) {
+            User user = ud.fetchUser(username);
             System.out.println(user);
-            addCommission(user);
         } else {
             System.out.println("INCORRECT CREDENTIALS");
         }
@@ -78,7 +71,8 @@ public class ViewModel {
         ud.addComm(commission);
     }
 
-    public void addUser() {
+    public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException {
+        ud.rundb();
         Scanner scanner = new Scanner(System.in);
         String username;
         String password;
@@ -89,6 +83,8 @@ public class ViewModel {
         password = scanner.nextLine();
 
         User user = new User(username, password);
-        ud.addUser(user);
+        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password.toCharArray());
+        ud.addUser(user, saltedMix[0], saltedMix[1]);
     }
+
 }

@@ -2,35 +2,13 @@ package org.example.dev;
 
 import org.example.*;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class CLIController {
     UserDAO ud = new UserDAO();
     DevUtils devUtils = new DevUtils();
-
-
-    // all the current user to log in
-    @Deprecated
-    public void welcomeUser() {
-        ud.rundb();
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("------ LOGIN ------ ");
-        System.out.println("ENTER USERNAME: ");
-        String username = scanner.nextLine();
-        System.out.println("ENTER PASSWORD: ");
-        String password = scanner.nextLine();
-
-        User user = ud.fetchUser(username, password);
-        if (user != null) {
-            System.out.println("\nWELCOME "+user.getUsername());
-            System.out.println(user);
-            addCommission(user);
-        } else {
-            System.out.println("INCORRECT CREDENTIALS");
-        }
-    }
-
 
     @InternalMethod
     @Deprecated
@@ -80,7 +58,7 @@ public class CLIController {
         ud.addComm(commission);
     }
 
-    public void addUser() {
+    public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException {
         Scanner scanner = new Scanner(System.in);
         String username;
         String password;
@@ -91,6 +69,7 @@ public class CLIController {
         password = scanner.nextLine();
 
         User user = new User(username, password);
-        ud.addUser(user);
+        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password.toCharArray());
+        ud.addUser(user, saltedMix[0], saltedMix[1]);
     }
 }

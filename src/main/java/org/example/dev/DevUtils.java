@@ -31,7 +31,6 @@ public class DevUtils {
             while (result.next()) {
                 allUsers.add(new User(result.getString("id"),
                         result.getString("username"),
-                        result.getString("password"),
                         result.getString("email"),
                         result.getDate("date_joined")
                             ));
@@ -74,26 +73,6 @@ public class DevUtils {
         return allComms;
     } //ADMIN FETCH ALL COMMS
 
-    @InternalMethod
-    @Deprecated
-    private User fetchUser_INTERNAL(String id) {
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE username = ? AND ");
-            stmt.setString(1, id);
-
-            ResultSet result = stmt.executeQuery();
-            result.next();
-            return new User(result.getString("id"),
-                    result.getString("username"),
-                    result.getString("password"),
-                    result.getString("email"),
-                    result.getDate("date_joined")
-            );
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    } // ADMIN FETCH USER
 
     @InternalMethod
     @Deprecated
@@ -114,4 +93,6 @@ public class DevUtils {
 
     }
 
+    public void era() {
+    }
 }

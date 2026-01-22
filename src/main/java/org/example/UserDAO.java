@@ -28,40 +28,18 @@ public class UserDAO {
         return DriverManager.getConnection(url, dbuser, password);
     }
 
-    public User fetchUser(String username, String password) {
+    public void addUser(User user, byte[] salt, byte[] hash) {
         try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE username = ? AND password = SHA2(?, 256)");
-            stmt.setString(1, username);
-            stmt.setString(2, password);
-
-            ResultSet result = stmt.executeQuery();
-            if (result.next()) {
-                return new User(result.getString("id"),
-                        result.getString("username"),
-                        result.getString("password"),
-                        result.getString("email"),
-                        result.getDate("date_joined")
-                );
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public void addUser(User user) {
-        try (Connection conn = getConnection()) {
-            String add_to_users = "INSERT INTO Users (id, username, password, email, date_joined) VALUES (?, ?, SHA2(?, 256), ?, ?)";
+            String add_to_users = "INSERT INTO Users (id, username, email, date_joined, salt, hash) VALUES (?, ?, ?, ?, ?, ?)";
 
             PreparedStatement prepped_statement = conn.prepareStatement(add_to_users);
 
             prepped_statement.setString(1, user.getId());
             prepped_statement.setString(2, user.getUsername());
-            prepped_statement.setString(3, user.getPassword());
-            prepped_statement.setString(4, user.getEmail());
-            prepped_statement.setString(5, convertDateFormat(user.getDate_joined()));
+            prepped_statement.setString(3, user.getEmail());
+            prepped_statement.setString(4, convertDateFormat(user.getDate_joined()));
+            prepped_statement.setBytes(5, salt);
+            prepped_statement.setBytes(6, hash);
             prepped_statement.executeUpdate();
 
         } catch (SQLException e) {
@@ -111,15 +89,48 @@ public class UserDAO {
         }
     }
 
-    // start up the database. If the
+    public byte[][] fetchSaltAndHash(String username) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT salt, hash FROM Users WHERE username = ?");
+            stmt.setString(1, username);
+
+            ResultSet result = stmt.executeQuery();
+            result.next();
+            return new byte[][] {result.getBytes("salt"), result.getBytes("hash")};
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public User fetchUser(String username) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE username = ? LIMIT 1");
+            stmt.setString(1, username);
+
+            ResultSet result = stmt.executeQuery();
+            result.next();
+            return new User (
+                    result.getString("id"),
+                    result.getString("username"),
+                    result.getString("email"),
+                    result.getDate("date_joined")
+            );
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    // start up the database.
     public void rundb() {
         try (Connection conn = getConnection()) {
             String create_users_table = "CREATE TABLE IF NOT EXISTS Users (" +
                     "id VARCHAR(90) NOT NULL UNIQUE PRIMARY KEY, " +
                     "username VARCHAR(30) UNIQUE, " +
-                    "password VARCHAR(64), " +
                     "email VARCHAR(30), " +
-                    "date_joined DATE" +
+                    "date_joined DATE," +
+                    "salt VARBINARY(16)," +
+                    "hash VARBINARY(16)" +
                     ")";
             String create_comms_table = "CREATE TABLE IF NOT EXISTS Comms (" +
                     "id VARCHAR(90) PRIMARY KEY, " +
@@ -148,6 +159,8 @@ public class UserDAO {
         }
 
     }
+
+
 
     public String convertDateFormat (Date date) {
         return DateTimeFormatter.ofPattern("yyyy-MM-dd")

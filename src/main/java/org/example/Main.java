@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import org.example.*;
+import org.example.dev.DevUtils;
 
 import javax.swing.*;
 static ViewModel vm = new ViewModel();
@@ -13,6 +14,7 @@ void main() {
     // database methods. The first thing we do is run the database.
     ViewModel vm = new ViewModel();
     swingUI();
+
 }
 
 
@@ -47,7 +49,6 @@ private void swingUI() {
     jframe.setSize(600,800);
     jframe.setVisible(true);
 }
-
 private static JPanel getLoginGroup(JPanel panel, JFrame jframe, JPanel afterpanel) {
     JPanel group = new JPanel();
     group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
