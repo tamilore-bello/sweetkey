@@ -10,8 +10,9 @@ public class User {
     private final Date date_joined;
 
     // minimum user constructor
-    public User (String u, String p) {
+    public User (String u, String e) {
         username = u;
+        email = e;
         date_joined = (Date.from(Instant.now()));
         id = String.valueOf(UUID.randomUUID());
     }

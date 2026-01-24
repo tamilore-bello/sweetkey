@@ -1,138 +1,218 @@
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.*;
-import org.example.*;
-import org.example.dev.DevUtils;
+package org.example;
 
 import javax.swing.*;
-static ViewModel vm = new ViewModel();
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
+import org.example.*;
 
-void main() {
-    // get the database up and running ! we create a UserDAO object, through which we can access various
-    // database methods. The first thing we do is run the database.
-    ViewModel vm = new ViewModel();
-    swingUI();
+public class Main {
 
-}
+    private static final ViewModel vm = new ViewModel();
 
+    public static void main(String[] args) {
+        // UI can be run asynchronously and load when all the elements have loaded (its own thread)
+        SwingUtilities.invokeLater(Main::swingUI);
+    }
 
-private void swingUI() {
-    Font defaultFont = new Font("SF Pro Rounded", Font.PLAIN, 16);
-    UIManager.put("Label.font", defaultFont);
-    JFrame jframe = new JFrame(" ♡ ✿ sweetkey ✿ ♡");
+    private static void swingUI() {
+        UIManager.put("Label.font", new Font("SF Pro Rounded", Font.PLAIN, 16));
 
-    // overarching content pane in the jFrame
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
-    jframe.setContentPane(panel);
+        JFrame frame = new JFrame(" ♡ ✿ sweetkey ✿ ♡");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 800);
+        frame.setLocationRelativeTo(null);
 
+        frame.setContentPane(loginPanel(frame));
+        frame.setVisible(true);
+    }
 
-    JPanel afterpanel = getWelcomeGroup();
-    afterpanel.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
-    // below is components inside the frame !
+    // LOGIN FRAME
+    private static JPanel loginPanel(JFrame frame) {
+        JPanel root = columnPanel();
 
-    // panel for welcome header + log in , everything except
-    // header and footer basically
-    JPanel welcomeGroup = getLoginGroup(panel, jframe, afterpanel);
+        JLabel header = header("Welcome!");
 
-    // add the center container to the overarching panel
-    panel.add(Box.createVerticalGlue());
-    panel.add(welcomeGroup);
-    panel.add(Box.createVerticalGlue());
-    panel.add(Box.createVerticalGlue());
+        JTextField username = sized(new JTextField(15));
+        JPasswordField password = sized(new JPasswordField(15));
 
-    // fixes to the frame itself
-    jframe.setBounds(200, 100, 100, 100);
-    jframe.setSize(600,800);
-    jframe.setVisible(true);
-}
-private static JPanel getLoginGroup(JPanel panel, JFrame jframe, JPanel afterpanel) {
-    JPanel group = new JPanel();
-    group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
-    group.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JButton login = primaryButton("Log In", () -> handleLogin(frame, username, password));
 
-    // header
-    JPanel header_row = new JPanel();
-    header_row.setLayout(new BoxLayout(header_row, BoxLayout.X_AXIS));
-    JLabel header_text = new JLabel("Welcome!");
-    header_text.setFont(new Font("SF Pro Display", Font.BOLD, 40));
-    header_row.add(header_text);
+        JLabel signup = linkLabel("First time? Create an account here.", () ->
+                swap(frame, signupPanel(frame))
+        );
 
-    // username row
-    JPanel username_row = new JPanel();
-    username_row.setLayout(new BoxLayout(username_row, BoxLayout.X_AXIS));
+        root.add(header);
+        root.add(vspace(20));
+        root.add(labeledRow("Username: ", username));
+        root.add(vspace(15));
+        root.add(labeledRow("Password: ", password));
+        root.add(vspace(30));
+        root.add(centered(login));
+        root.add(vspace(10));
+        root.add(signup);
 
-    username_row.setAlignmentX(Component.CENTER_ALIGNMENT);
-    JLabel username_text = new JLabel("Username: ");
-    JTextField username_field = new JTextField(15);
-    username_field.setMaximumSize(new Dimension(username_field.getPreferredSize().width, username_field.getPreferredSize().height));
-    username_row.add(username_text);
-    username_row.add(username_field);
+        return root;
+    }
 
-    // password row
-    JPanel password_row = new JPanel();
-    password_row.setLayout(new BoxLayout(password_row, BoxLayout.X_AXIS));
-    password_row.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-    JLabel password_text = new JLabel("Password: ");
-    JPasswordField password_field = new JPasswordField(15);
-    password_field.setMaximumSize(new Dimension(password_field.getPreferredSize().width, password_field.getPreferredSize().height));
-    password_row.add(password_text);
-    password_row.add(password_field);
-
-    // Button row
-    JPanel buttonRow = new JPanel();
-    buttonRow.setLayout(new BoxLayout(buttonRow, BoxLayout.X_AXIS));
-    buttonRow.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-    JButton button = new JButton("Log In");
-    button.setFont(new Font("SF Pro Rounded", Font.PLAIN, 14));
-    Dimension buttonSize = new Dimension(280, button.getPreferredSize().height);
-    button.setMinimumSize(buttonSize);
-    button.setPreferredSize(buttonSize);
-    button.setMaximumSize(buttonSize);
-    buttonRow.add(Box.createHorizontalGlue());
-    buttonRow.add(button);
-    buttonRow.add(Box.createHorizontalGlue());
-
-    // on click action!
-    button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.out.println("click registered! "+Date.from(Instant.now()));
-
-            panel.setVisible(false);
-            jframe.setContentPane(afterpanel);
+    private static void handleLogin(JFrame frame, JTextField username, JPasswordField password) {
+        char[] pwd = password.getPassword();
+        try {
+            // if the username and password are valid, switch the frames.
+            if (vm.welcomeUser(username.getText(), pwd)) {
+                swap(frame, welcomePanel(vm.getCurrentUser()));
+            } else {
+                JOptionPane.showMessageDialog(frame, "Incorrect credentials.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            // make sure no password data lingers....
+            Arrays.fill(pwd, '0');
         }
-    });
+    }
 
-    // adding everything to the center container
-    group.add(header_row);
-    group.add(Box.createRigidArea(new Dimension(0, 20))); // 20px vertical space
-    group.add(Box.createRigidArea(new Dimension(0, 15))); // space between header and username
-    group.add(username_row);
-    group.add(Box.createRigidArea(new Dimension(0, 15))); // space between header and username
-    group.add(password_row);
-    group.add(Box.createRigidArea(new Dimension(0, 15))); // space between header and username
-    group.add(buttonRow);
-    return group;
+    // SIGN UP
+    private static JPanel signupPanel(JFrame frame) {
+        JPanel root = columnPanel();
+
+        JLabel header = header("Sign Up!");
+
+        JTextField username = sized(new JTextField(15));
+        JPasswordField password = sized(new JPasswordField(15));
+        JTextField email = sized(new JTextField(17));
+
+        // on button press, validate and execute the new User submission
+        JButton submit = primaryButton("Continue", () -> handleSignup(frame, username, email, password));
+
+        root.add(header);
+        root.add(vspace(20));
+        root.add(labeledRow("Username: ", username));
+        root.add(vspace(15));
+        root.add(labeledRow("Password: ", password));
+        root.add(vspace(15));
+        root.add(labeledRow("Email: ", email));
+        root.add(vspace(30));
+        root.add(centered(submit));
+
+        return root;
+    }
+
+    // validate the new user submission
+    private static void handleSignup(JFrame frame, JTextField user, JTextField email, JPasswordField pass) {
+        char[] pwd = pass.getPassword();
+        try {
+            if (vm.addUser(user.getText(), email.getText(), pwd)) {
+                swap(frame, loginPanel(frame));
+            } else {
+                JOptionPane.showMessageDialog(frame,
+                        "Invalid input.\nPassword must be 8+ characters with at least one special character.\nEmail must be valid.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            Arrays.fill(pwd, '0');
+        }
+    }
+
+    // WELCOME PAGE
+    private static JPanel welcomePanel(User user) {
+        JPanel root = columnPanel();
+
+        JLabel header = new JLabel("Welcome, " + user.getUsername() + "!");
+        header.setFont(new Font("SF Pro", Font.BOLD, 20));
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Upcoming Work", new JPanel());
+        tabs.addTab("Add a Commission", new JPanel());
+        tabs.addTab("Stats", new JPanel());
+        tabs.addTab("Settings", new JPanel());
+
+        root.add(header);
+        root.add(vspace(15));
+        root.add(tabs);
+
+        return root;
+    }
+
+    // HELPING METHODS
+
+    // aligns a panel, gives some top padding.
+    private static JPanel columnPanel() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setAlignmentX(Component.CENTER_ALIGNMENT);
+        p.setBorder(BorderFactory.createEmptyBorder(120, 60, 60, 60));
+        return p;
+    }
+
+    // create a labeled row
+    private static JPanel labeledRow(String label, JComponent field) {
+        JPanel row = new JPanel();
+        row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
+        row.setAlignmentX(Component.CENTER_ALIGNMENT);
+        row.add(new JLabel(label));
+        row.add(field);
+        return row;
+    }
+
+    // create a header
+    private static JLabel header(String text) {
+        JLabel h = new JLabel(text);
+        h.setFont(new Font("SF Pro Display", Font.BOLD, 40));
+        h.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return h;
+    }
+
+    // create a button
+    private static JButton primaryButton(String text, Runnable action) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("SF Pro Rounded", Font.PLAIN, 14));
+        Dimension d = new Dimension(280, b.getPreferredSize().height);
+        b.setPreferredSize(d);
+        b.setMaximumSize(d);
+        b.addActionListener(e -> action.run());
+        return b;
+    }
+
+    // create a link with an action
+    private static JLabel linkLabel(String text, Runnable action) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("SF Pro Rounded", Font.ITALIC, 16));
+        l.setAlignmentX(Component.CENTER_ALIGNMENT);
+        l.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                action.run();
+            }
+        });
+        return l;
+    }
+
+    // create a one component centered jpanel
+    private static JPanel centered(JComponent c) {
+        JPanel p = new JPanel();
+        p.add(c);
+        return p;
+    }
+
+    // add vertical space
+    private static Component vspace(int px) {
+        return Box.createRigidArea(new Dimension(0, px));
+    }
+
+    // set the size (of a field) to be the maximum size
+    private static <T extends JComponent> T sized(T c) {
+        c.setMaximumSize(c.getPreferredSize());
+        return c;
+    }
+
+    // switch between jPanels
+    private static void swap(JFrame frame, JPanel panel) {
+        frame.setContentPane(panel);
+        frame.revalidate();
+        frame.repaint();
+    }
 }
-private static JPanel getWelcomeGroup() {
-    JPanel afterpanel = new JPanel();
-    afterpanel.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
-
-    return afterpanel;
-}
-
-
-
-
-
-
-
-
-
-

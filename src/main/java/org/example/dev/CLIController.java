@@ -68,7 +68,7 @@ public class CLIController {
         System.out.println("ENTER PASSWORD ");
         password = scanner.nextLine();
 
-        User user = new User(username, password);
+        User user = new User(username, "");
         byte[][] saltedMix = AuthUtils.generateSaltAndHash(password.toCharArray());
         ud.addUser(user, saltedMix[0], saltedMix[1]);
     }

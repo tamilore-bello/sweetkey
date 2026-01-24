@@ -10,16 +10,19 @@ import java.util.Scanner;
 public class ViewModel {
     UserDAO ud = new UserDAO();
     DevUtils devUtils = new DevUtils();
-
-    public void welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    User user;
+    public User getCurrentUser() {
+      return user;
+    }
+    public boolean welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
         byte[][] saltyMix = ud.fetchSaltAndHash(username);
-
+        if (saltyMix == null) return false;
         if (AuthUtils.validateUserAuth(password, saltyMix[0], saltyMix[1])) {
-            User user = ud.fetchUser(username);
-            System.out.println(user);
+            user = ud.fetchUser(username);
+            return true;
         } else {
-            System.out.println("INCORRECT CREDENTIALS");
+            return false;
         }
     }
 
@@ -71,20 +74,38 @@ public class ViewModel {
         ud.addComm(commission);
     }
 
-    public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
-        Scanner scanner = new Scanner(System.in);
-        String username;
-        String password;
+        if (username.isEmpty() || email.isEmpty() || password.length == 0)
+            return false;
 
-        System.out.println("ENTER USERNAME");
-        username = scanner.nextLine();
-        System.out.println("ENTER PASSWORD ");
-        password = scanner.nextLine();
+        System.out.print(0);
+        if (!email.contains("@"))
+            return false;
 
-        User user = new User(username, password);
-        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password.toCharArray());
+        System.out.print(1);
+
+        boolean hasSpecial = false;
+        for (char c : password) {
+            if (("!@#$%^&*").contains(Character.toString(c)))
+                hasSpecial = true;
+
+        }
+        if (!hasSpecial)
+            return false;
+        System.out.print(2);
+
+        if (password.length < 8)
+            return false;
+        System.out.print(3);
+
+
+        // another check for if the username is already in the database....
+        User user = new User(username, email);
+        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password);
         ud.addUser(user, saltedMix[0], saltedMix[1]);
+        System.out.print(4);
+        return true;
     }
 
 }

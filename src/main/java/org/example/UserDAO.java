@@ -93,10 +93,10 @@ public class UserDAO {
         try (Connection conn = getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("SELECT salt, hash FROM Users WHERE username = ?");
             stmt.setString(1, username);
-
             ResultSet result = stmt.executeQuery();
-            result.next();
-            return new byte[][] {result.getBytes("salt"), result.getBytes("hash")};
+            //result.next();
+            if (result.next())
+                return new byte[][] {result.getBytes("salt"), result.getBytes("hash")};
         } catch (SQLException e) {
             e.printStackTrace();
         }
