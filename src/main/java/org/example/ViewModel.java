@@ -5,6 +5,8 @@ import org.example.dev.InternalMethod;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class ViewModel {
@@ -76,36 +78,37 @@ public class ViewModel {
 
     public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
-        if (username.isEmpty() || email.isEmpty() || password.length == 0)
-            return false;
+        if (isInvalidSignUpDetails(username, email, password)) return false;
 
-        System.out.print(0);
-        if (!email.contains("@"))
-            return false;
-
-        System.out.print(1);
-
-        boolean hasSpecial = false;
-        for (char c : password) {
-            if (("!@#$%^&*").contains(Character.toString(c)))
-                hasSpecial = true;
-
-        }
-        if (!hasSpecial)
-            return false;
-        System.out.print(2);
-
-        if (password.length < 8)
-            return false;
-        System.out.print(3);
-
-
-        // another check for if the username is already in the database....
         User user = new User(username, email);
         byte[][] saltedMix = AuthUtils.generateSaltAndHash(password);
         ud.addUser(user, saltedMix[0], saltedMix[1]);
         System.out.print(4);
         return true;
     }
+
+    public ArrayList<Commission> getCurrentUserCommission() {
+        return ud.fetchAllUserComms(user.getId());
+    }
+
+    private boolean isInvalidSignUpDetails(String username, String email, char[] password) {
+        if (username.isEmpty() || email.isEmpty() || password.length == 0)
+            return true;
+        if (!email.contains("@"))
+            return true;
+        boolean hasSpecial = false;
+        for (char c : password)
+            if (("!@#$%^&*").contains(Character.toString(c)))
+                hasSpecial = true;
+        if (!hasSpecial)
+            return true;
+        if (password.length < 8)
+            return true;
+        if (!(ud.fetchUser(username) == null))
+            return true;
+        return false;
+    }
+
+
 
 }

@@ -1,13 +1,15 @@
 package org.example;
 
+import org.example.dev.CLIController;
+
 import javax.swing.*;
+import javax.swing.event.ListDataListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import org.example.*;
+
 
 public class Main {
 
@@ -123,11 +125,12 @@ public class Main {
         JPanel root = columnPanel();
 
         JLabel header = new JLabel("Welcome, " + user.getUsername() + "!");
+        header.setAlignmentX(Component.CENTER_ALIGNMENT);
         header.setFont(new Font("SF Pro", Font.BOLD, 20));
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Upcoming Work", new JPanel());
-        tabs.addTab("Add a Commission", new JPanel());
+        tabs.addTab("Upcoming Work", upWork());
+        tabs.addTab("Add a Commission", addaC());
         tabs.addTab("Stats", new JPanel());
         tabs.addTab("Settings", new JPanel());
 
@@ -135,8 +138,96 @@ public class Main {
         root.add(vspace(15));
         root.add(tabs);
 
+
         return root;
     }
+
+    private static JPanel upWork() {
+        JPanel upWork = new JPanel();
+        ArrayList<Commission> currentComms = vm.getCurrentUserCommission();
+        for (Commission c : currentComms) {
+            System.out.println(c);
+        }
+        ListModel model = new ListModel() {
+            @Override
+            public int getSize() {
+                return currentComms.size();
+            }
+
+            @Override
+            public Object getElementAt(int index) {
+                return currentComms.get(index).getId();
+            }
+
+            @Override
+            public void addListDataListener(ListDataListener l) {
+
+            }
+
+            @Override
+            public void removeListDataListener(ListDataListener l) {
+
+            }
+        };
+        JList list = new JList(model);
+        upWork.add(list);
+        return upWork;
+    }
+
+    private static JPanel addaC() {
+        JPanel upWork = columnPanel();
+        upWork.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
+
+        JPanel handle = labeledRow("Commissioner Handle:", new JTextField());
+        JPanel sizeOptionsRow = labeledRow("Size:", new JComboBox(new String[]{"Icon", "Bust", "Half-Body", "3/4", "Full-body", "Chibi", "Reference"}));
+
+
+
+        JPanel description = labeledRow("Description:", new JTextArea());
+
+        JPanel dateOrdered = labeledRow("Date Ordered:", new DateTextField());
+        JPanel dateExpected = labeledRow("Date Expected:", new DateTextField());
+        JPanel paymentRec = labeledRow("Completed:", new JComboBox(new String[]{"Yes", "No"}));
+
+
+        JPanel platform = labeledRow("Platform:", new JTextField());
+        JPanel cost = labeledRow("Cost:", new JTextField());
+        JPanel ref = labeledRow("Reference Link:", new JTextField());
+
+        JPanel status = labeledRow("Current Status:", new JComboBox(new String[]{"Not Started", "In Progress", "Completed"}));
+
+        JButton addComm = primaryButton("Add Commission", new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+
+        upWork.add(handle);
+        upWork.add(sizeOptionsRow);
+        upWork.add(vspace(15));
+        upWork.add(new JSeparator());
+        upWork.add(vspace(15));
+        upWork.add(description);
+        upWork.add(vspace(15));
+        upWork.add(new JSeparator());
+        upWork.add(vspace(15));        upWork.add(dateOrdered);
+        upWork.add(dateExpected);
+        upWork.add(paymentRec);
+        upWork.add(vspace(15));
+        upWork.add(new JSeparator());
+        upWork.add(vspace(15));        upWork.add(platform);
+        upWork.add(cost);
+        upWork.add(ref);
+        upWork.add(vspace(15));
+        upWork.add(new JSeparator());
+        upWork.add(vspace(15));
+        upWork.add(status);
+        upWork.add(vspace(15));
+        upWork.add(centered(addComm));
+        return upWork;
+    }
+
 
     // HELPING METHODS
 
@@ -158,6 +249,7 @@ public class Main {
         row.add(field);
         return row;
     }
+
 
     // create a header
     private static JLabel header(String text) {

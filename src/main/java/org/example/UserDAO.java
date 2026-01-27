@@ -1,9 +1,9 @@
 package org.example;
 
+import org.example.dev.InternalMethod;
+
 import java.math.BigDecimal;
 import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -117,10 +117,46 @@ public class UserDAO {
                     result.getDate("date_joined")
             );
         } catch (SQLException e) {
+            System.out.println("RESULT SET IS EMPTY");
             e.printStackTrace();
         }
         return null;
     }
+
+    // fetch all of a user's commissions based on user id.
+    public ArrayList<Commission> fetchAllUserComms(String id) {
+        ArrayList<Commission> allComms = new ArrayList<Commission>();
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Comms WHERE id = ?");
+            stmt.setString(1, id);
+
+            ResultSet result = stmt.executeQuery();
+
+            while (result.next()) {
+                System.out.println("Started");
+                allComms.add(new Commission(
+                        result.getString("id"),
+                        result.getString("artist_id"),
+                        result.getString("commissioner_handle"),
+                        result.getString("platform"),
+                        result.getDate("date_ordered"),
+                        result.getDate("date_expected"),
+                        result.getString("size"),
+                        (result.getBigDecimal("cost")).doubleValue(),
+                        result.getString("description"),
+                        result.getString("reference_link"),
+                        result.getBoolean("payment_received"),
+                        result.getString("status")
+                ));
+                System.out.println(1);
+            }
+            return allComms;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return allComms;
+    }
+
     // start up the database.
     public void rundb() {
         try (Connection conn = getConnection()) {
