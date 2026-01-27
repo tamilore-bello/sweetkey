@@ -1,25 +1,27 @@
 package org.example;
 
-import org.example.dev.DevUtils;
-import org.example.dev.InternalMethod;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class ViewModel {
     UserDAO ud = new UserDAO();
-    DevUtils devUtils = new DevUtils();
     User user;
+
+    // return the current User.
     public User getCurrentUser() {
       return user;
     }
+
+    // authenticate a User.
     public boolean welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
+
+        // fetch the salt and hash for an entered username, if there is none, return fail
         byte[][] saltyMix = ud.fetchSaltAndHash(username);
         if (saltyMix == null) return false;
+
+        // if on validation, the entered password is valid with the received hash, return pass, otherwise, fail
         if (AuthUtils.validateUserAuth(password, saltyMix[0], saltyMix[1])) {
             user = ud.fetchUser(username);
             return true;
@@ -28,69 +30,32 @@ public class ViewModel {
         }
     }
 
-    @InternalMethod
-    @Deprecated
-    public void printAllUsers() {
-        System.out.println("------ ALL USERS ------ ");
-        for (User i : devUtils.fetchAllUsers_INTERNAL()) {
-            System.out.println(i);
-        }
-    }
 
-    @InternalMethod
-    @Deprecated
-    public User[] returnAllUsers() {
-        return devUtils.fetchAllUsers_INTERNAL().toArray(new User[0]);
-    }
-
-
-    @InternalMethod
-    @Deprecated
-    public void printAllComms() {
-        System.out.println("------ ALL COMMISSIONS ------ ");
-        for (Commission i : devUtils.fetchAllComms_INTERNAL()) {
-            System.out.println(i);
-        }
-    }
-
-    // TODO
-// if a user object is fabricated then this is no longer secure and we can add random commissions to users.
-    public void addCommission(User user) {
-        Scanner scanner = new Scanner(System.in);
-        String ai = user.getId();
-        System.out.println("ENTER THE COMMISSIONER'S HANDLE: ");
-        String ch = scanner.nextLine();
-        System.out.println("ENTER THE SIZE OF THE COMMISSION: ");
-        String s = scanner.nextLine();
-        System.out.println("ENTER THE LINK TO THE REFERENCE: ");
-        String r = scanner.nextLine();
-        System.out.println("HAS PAYMENT BEEN RECEIVED?: ");
-        Boolean b = scanner.nextBoolean();
-
-        // OF COURSE, we can add more fields and scan in responses.
-        Commission commission = new Commission( ai,
-                ch,
-                s,
-                r,
-                b);
+   // add a commission to the database.
+    public void addCommission(Commission commission) {
         ud.addComm(commission);
     }
 
+    // add a user to the database
     public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         ud.rundb();
+
+        // if any of the sign-up details are invalid, fail.
         if (isInvalidSignUpDetails(username, email, password)) return false;
 
+        // Add the passed User to the database.
         User user = new User(username, email);
         byte[][] saltedMix = AuthUtils.generateSaltAndHash(password);
         ud.addUser(user, saltedMix[0], saltedMix[1]);
-        System.out.print(4);
         return true;
     }
 
+    // get all Commissions for a User
     public ArrayList<Commission> getCurrentUserCommission() {
         return ud.fetchAllUserComms(user.getId());
     }
 
+    // validate sign-up details
     private boolean isInvalidSignUpDetails(String username, String email, char[] password) {
         if (username.isEmpty() || email.isEmpty() || password.length == 0)
             return true;
@@ -108,7 +73,4 @@ public class ViewModel {
             return true;
         return false;
     }
-
-
-
 }

@@ -1,7 +1,4 @@
 package org.example;
-
-import org.example.dev.InternalMethod;
-
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.ZoneId;
@@ -28,6 +25,7 @@ public class UserDAO {
         return DriverManager.getConnection(url, dbuser, password);
     }
 
+    // add a new User to the database
     public void addUser(User user, byte[] salt, byte[] hash) {
         try (Connection conn = getConnection()) {
             String add_to_users = "INSERT INTO Users (id, username, email, date_joined, salt, hash) VALUES (?, ?, ?, ?, ?, ?)";
@@ -41,13 +39,12 @@ public class UserDAO {
             prepped_statement.setBytes(5, salt);
             prepped_statement.setBytes(6, hash);
             prepped_statement.executeUpdate();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
+    // add a new Commission to the database
     public void addComm(Commission commission) {
         try (Connection conn = getConnection()) {
             String add_to_comms = "INSERT INTO Comms (" +
@@ -80,21 +77,20 @@ public class UserDAO {
             prepped_statement.setBoolean(11, commission.getPaymentReceived());
             prepped_statement.setString(12, commission.getStatus());
 
-
-
             prepped_statement.executeUpdate();
-
+            System.out.println("Executed");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    // fetch the salt and hash for a User password authentication
     public byte[][] fetchSaltAndHash(String username) {
         try (Connection conn = getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("SELECT salt, hash FROM Users WHERE username = ?");
             stmt.setString(1, username);
+
             ResultSet result = stmt.executeQuery();
-            //result.next();
             if (result.next())
                 return new byte[][] {result.getBytes("salt"), result.getBytes("hash")};
         } catch (SQLException e) {
@@ -103,6 +99,8 @@ public class UserDAO {
         return null;
     }
 
+    // fetch a User based on their Username, used for fetching a user post-auth and for checking that a Username
+    // doesn't already exist during User creation.
     public User fetchUser(String username) {
         try (Connection conn = getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Users WHERE username = ? LIMIT 1");
@@ -123,17 +121,15 @@ public class UserDAO {
         return null;
     }
 
-    // fetch all of a user's commissions based on user id.
+    // fetch all of a User's commissions based on User id.
     public ArrayList<Commission> fetchAllUserComms(String id) {
-        ArrayList<Commission> allComms = new ArrayList<Commission>();
+        ArrayList<Commission> allComms = new ArrayList<>();
         try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Comms WHERE id = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Comms WHERE artist_id = ?");
             stmt.setString(1, id);
 
             ResultSet result = stmt.executeQuery();
-
             while (result.next()) {
-                System.out.println("Started");
                 allComms.add(new Commission(
                         result.getString("id"),
                         result.getString("artist_id"),
@@ -157,7 +153,7 @@ public class UserDAO {
         return allComms;
     }
 
-    // start up the database.
+    // start up the database. Create the tables if they don't already exist.
     public void rundb() {
         try (Connection conn = getConnection()) {
             String create_users_table = "CREATE TABLE IF NOT EXISTS Users (" +
@@ -196,11 +192,9 @@ public class UserDAO {
 
     }
 
-
-
+    // Format a Date object into a String, yyyy-MM-dd
     public String convertDateFormat (Date date) {
         return DateTimeFormatter.ofPattern("yyyy-MM-dd")
                 .format(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
     }
-
 }

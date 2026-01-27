@@ -35,8 +35,8 @@ public class CLIController {
         }
     }
 
-    // TODO
-    // if a user object is fabricated then this is no longer secure and we can add random commissions to users.
+    @InternalMethod
+    @Deprecated
     public void addCommission(User user) {
         Scanner scanner = new Scanner(System.in);
         String ai = user.getId();
@@ -58,6 +58,8 @@ public class CLIController {
         ud.addComm(commission);
     }
 
+    @InternalMethod
+    @Deprecated
     public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException {
         Scanner scanner = new Scanner(System.in);
         String username;

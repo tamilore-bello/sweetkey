@@ -1,8 +1,7 @@
 package org.example;
 import java.text.NumberFormat;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
@@ -21,7 +20,7 @@ public class Commission {
     private Boolean payment_received;
     private String status;
 
-    // minimum constructor
+    // minimum constructor (used for CLI)
     public Commission(String artistID, String commissionerHandle, String sizeOf, String referenceLink, Boolean paymentReceived) {
         artist_id = artistID;
         id = (UUID.randomUUID()).toString();
@@ -37,7 +36,23 @@ public class Commission {
         status = "unfinished";
     }
 
-    // complete constructor, used for database operations
+    // complete constructor, used for uploading to database operations
+    public Commission(String artist_id, String commissioner_handle, String platform, Date date_ordered, Date date_expected, String size, Double cost, String description, String reference_link, Boolean payment_received, String status) {
+        id = (UUID.randomUUID()).toString();
+        this.artist_id = artist_id;
+        this.commissioner_handle = commissioner_handle;
+        this.platform = platform;
+        this.date_ordered = date_ordered;
+        this.date_expected = date_expected;
+        this.size = size;
+        this.cost = cost;
+        this.description = description;
+        this.reference_link = reference_link;
+        this.payment_received = payment_received;
+        this.status = status;
+    }
+
+    // complete constructor, used for fetching from database operations
     public Commission(String id, String artist_id, String commissioner_handle, String platform, Date date_ordered, Date date_expected, String size, Double cost, String description, String reference_link, Boolean payment_received, String status) {
         this.id = id;
         this.artist_id = artist_id;
@@ -110,10 +125,9 @@ public class Commission {
         this.commissioner_handle = commissioner_handle;
     }
     public void setStatus(String status) {this.status = status;}
+
     // public toString method
     public String toString() {
-
-
         return ("> COMMISSION ID: "+getId()+"\n"+
                 "> ARTIST ID: "+getArtist_id()+"\n"+
                 "> COMMISSIONED BY: "+getCommissioner_handle()+"\n"+

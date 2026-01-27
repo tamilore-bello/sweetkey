@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+// class written by Liu guanghua, c2012
 
 public class DateTextField extends JTextField {
 
@@ -314,4 +315,3 @@ public class DateTextField extends JTextField {
     }
 }
 
-// class written by Liu guanghua, c2012

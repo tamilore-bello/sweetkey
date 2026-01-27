@@ -6,6 +6,8 @@ import org.example.User;
 import java.sql.*;
 import java.util.ArrayList;
 
+// a class of utilities that are useful as i develop sweetkey, but should NEVER
+// be seen in production code
 public class DevUtils {
     private String url = "jdbc:mysql://localhost:3307/testdb?useSSL=false&allowPublicKeyRetrieval=true";
     private String dbuser = "root";
@@ -21,6 +23,7 @@ public class DevUtils {
         return DriverManager.getConnection(url, dbuser, password);
     }
 
+    // returns all users.
     @InternalMethod
     @Deprecated
     public ArrayList<User> fetchAllUsers_INTERNAL() {
@@ -42,6 +45,7 @@ public class DevUtils {
         return allUsers;
     }
 
+    // returns all commissions.
     @InternalMethod
     @Deprecated
     public ArrayList<Commission> fetchAllComms_INTERNAL() {
@@ -73,7 +77,7 @@ public class DevUtils {
         return allComms;
     } //ADMIN FETCH ALL COMMS
 
-
+    // wipes all tables without wiping the database.
     @InternalMethod
     @Deprecated
     public void eraseEverything() {
@@ -93,6 +97,4 @@ public class DevUtils {
 
     }
 
-    public void era() {
-    }
 }
