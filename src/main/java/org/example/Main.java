@@ -5,8 +5,6 @@ import org.example.dev.DevUtils;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.Instant;
@@ -148,7 +146,7 @@ public class Main {
         tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, 3));
         tabs.addTab("Add a Commission", addACommissionTab(tabs));
         tabs.addTab("Stats", statsTab(tabs));
-        tabs.addTab("Settings", new JPanel());
+        tabs.addTab("Settings", settingsTab(tabs));
 
 
         root.add(header);
@@ -157,7 +155,6 @@ public class Main {
 
         return root;
     }
-
 
     // TABS ------------------------------------------------------------------------------------
     // display user commissions tab
@@ -277,11 +274,68 @@ public class Main {
 
     }
 
+    // user statistics tab
     private static JPanel statsTab(JTabbedPane tabs) {
         JPanel root = columnPanel();
         JLabel label = new JLabel("Falling for the promise of the emptiness machine...");
 
         root.add(label);
+        return root;
+    }
+
+    // user settings tab
+    private static JPanel settingsTab(JTabbedPane tabs) {
+        JPanel root = columnPanel();
+        root.setBorder(BorderFactory.createEmptyBorder(60, 80, 0, 80));
+
+        JTextField changeUsernameF = new JTextField();
+        changeUsernameF.setMaximumSize(new Dimension(changeUsernameF.getMaximumSize().width, changeUsernameF.getPreferredSize().height));
+        JPanel usernameRowP = labeledRow("Former Username: "+vm.getCurrentUser().getUsername(), (JComponent) Box.createRigidArea(new Dimension(300, 0)));
+        JPanel usernameRow = labeledRow("Change Username: ", changeUsernameF);
+        JPanel usernameButton = centered(primaryButton("Change Username", new Runnable() {
+            @Override
+            public void run() {
+                // TODO implement
+            }
+        }));
+        Dimension d = new Dimension(300, usernameButton.getPreferredSize().height);
+        usernameButton.setPreferredSize(d);
+        usernameButton.setMaximumSize(d);
+
+        JTextField changeEmailF = new JTextField();
+        changeEmailF.setMaximumSize(new Dimension(changeUsernameF.getMaximumSize().width, changeUsernameF.getPreferredSize().height));
+        JPanel emailRowP = labeledRow("Former Email: "+vm.getCurrentUser().getEmail(), (JComponent) Box.createRigidArea(new Dimension(300, 0)));
+        JPanel emailRow = labeledRow("Change Email: ", changeEmailF);
+        JPanel emailButton = centered(primaryButton("Change Email", new Runnable() {
+            @Override
+            public void run() {
+                // TODO implement
+            }
+        }));
+        emailButton.setPreferredSize(d);
+        emailButton.setMaximumSize(d);
+
+        JButton deleteAccountButton = primaryButton("Delete Account", new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                });
+        deleteAccountButton.setOpaque(true);
+        deleteAccountButton.setForeground(Color.red);
+        JPanel deleteAccountP = centered(deleteAccountButton);
+
+        root.add(usernameRowP);
+        root.add(usernameRow);
+        root.add(usernameButton);
+        root.add(vspace(10));
+        root.add(new JSeparator());
+        root.add(vspace(10));
+        root.add(emailRowP);
+        root.add(emailRow);
+        root.add(emailButton);
+        root.add(vspace(300));
+        root.add(deleteAccountP);
         return root;
     }
 
@@ -375,7 +429,7 @@ public class Main {
     private static JButton primaryButton(String text, Runnable action) {
         JButton b = new JButton(text);
         b.setFont(new Font("SF Pro Rounded", Font.PLAIN, 14));
-        Dimension d = new Dimension(280, b.getPreferredSize().height);
+        Dimension d = new Dimension(300, b.getPreferredSize().height);
         b.setPreferredSize(d);
         b.setMaximumSize(d);
         b.addActionListener(_ -> action.run());
@@ -438,5 +492,4 @@ public class Main {
             }
         }
     }
-
 }

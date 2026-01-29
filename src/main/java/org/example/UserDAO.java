@@ -101,12 +101,16 @@ public class UserDAO {
 
             ResultSet result = stmt.executeQuery();
             result.next();
-            return new User (
-                    result.getString("id"),
-                    result.getString("username"),
-                    result.getString("email"),
-                    result.getDate("date_joined")
-            );
+            try {
+                return new User(
+                        result.getString("id"),
+                        result.getString("username"),
+                        result.getString("email"),
+                        result.getDate("date_joined")
+                );
+            } catch (SQLException e){
+                return null;
+            }
         } catch (SQLException e) {
             System.out.println("RESULT SET IS EMPTY");
             e.printStackTrace();
