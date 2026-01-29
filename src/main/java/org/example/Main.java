@@ -7,11 +7,10 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Enumeration;
+import java.util.*;
 
 
 public class Main {
@@ -131,23 +130,19 @@ public class Main {
         // messing around
         UserDAO ud = new UserDAO();
         DevUtils du = new DevUtils();
-        System.out.println(ud.fetchAllUserComms(user.getId(),3));
-        System.out.println( ud.fetchAllUserLateCommissions(user.getId()));
+        System.out.println(ud.fetchAllUserComms(user.getId(),4));
         System.out.println( ud.countAllUserLateCommissions(user.getId()));
         System.out.println(ud.amountEarned(user.getId(), -1));
-
-
 
         JPanel root = columnPanel();
         JLabel header = header("Welcome, "+user.getUsername()+"!");
         header.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, 3));
+        tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, 4));
         tabs.addTab("Add a Commission", addACommissionTab(tabs));
         tabs.addTab("Stats", statsTab(tabs));
         tabs.addTab("Settings", settingsTab(tabs));
-
 
         root.add(header);
         root.add(vspace(15));
@@ -239,7 +234,7 @@ public class Main {
                 paymentRecF.setSelectedIndex(0);
                 statusF.setSelectedIndex(0);
 
-                refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, 3), "Upcoming Work");
+                refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, 4), "Upcoming Work");
             } else {
                 JOptionPane.showMessageDialog(tabs, "Please complete all fields.");
             }
@@ -276,10 +271,43 @@ public class Main {
 
     // user statistics tab
     private static JPanel statsTab(JTabbedPane tabs) {
-        JPanel root = columnPanel();
-        JLabel label = new JLabel("Falling for the promise of the emptiness machine...");
+        JPanel root = new JPanel();
+        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
+        root.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        root.add(label);
+        JLabel headerText = header("Current Statistics");
+        headerText.setFont(headerText.getFont().deriveFont(Font.BOLD, 20));
+        JPanel header = centered(headerText);
+        header.setMaximumSize(new Dimension(header.getMaximumSize().width, header.getPreferredSize().height));
+
+        // Current late commission qty:
+        JLabel currentLateQty = new JLabel("❥·∙     Current Overdue Commissions: "+vm.lateCommissionQty());
+        // Earnings ever
+        JLabel earnedEver = new JLabel("❥·∙     Earnings of all time: "+NumberFormat.getCurrencyInstance().format(vm.earningsEver()));
+        // Earnings this year
+        JLabel earnedYear = new JLabel("❥·∙     Earnings this year: "+NumberFormat.getCurrencyInstance().format(vm.earningsYear()));
+        // Earnings this month
+        JLabel earnedMonth = new JLabel("❥·∙     Earnings this month: "+NumberFormat.getCurrencyInstance().format(vm.earningsMonth()));
+        // Date Joined
+        JLabel dateJoined = new JLabel("Joined "+ DateFormat.getDateInstance().format(vm.getDateJoined()));
+
+        root.add(vspace(20));
+        root.add((header));
+        root.add(vspace(20));
+        root.add(new JSeparator());
+        root.add(vspace(20));
+        root.add(centered(currentLateQty));
+        root.add(vspace(20));
+        root.add(new JSeparator());
+        root.add(vspace(20));
+        root.add(centered(earnedMonth));
+        root.add(centered(earnedYear));
+        root.add(centered(earnedEver));
+        root.add(vspace(20));
+        root.add(new JSeparator());
+        root.add(vspace(300));
+        root.add(centered(dateJoined));
+
         return root;
     }
 
@@ -345,6 +373,7 @@ public class Main {
                 "Order By: Soonest Due",
                 "Order By: Oldest",
                 "Order By: Size",
+                "Order By: Currently Overdue",
                 "Order By: Default"
         });
         // TODO add order where LATE, where UNPAID, by PROGRESS

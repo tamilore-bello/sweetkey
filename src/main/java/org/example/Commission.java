@@ -20,6 +20,10 @@ public class Commission {
     private Boolean payment_received;
     private String status;
 
+    // potential added fields:
+    // delivered (true/false)
+    // date_delivered
+
     // minimum constructor (used for CLI)
     public Commission(String artistID, String commissionerHandle, String sizeOf, String referenceLink, Boolean paymentReceived) {
         artist_id = artistID;

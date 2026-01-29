@@ -169,11 +169,13 @@ public class UserDAO {
                         "WHEN 'Chibi' THEN 6 " +
                         "WHEN 'Reference' THEN 7 " +
                         "ELSE 8 END";
+            case 3:
+                return "SELECT * FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' " +
+                        "AND artist_id = ? ORDER BY date_expected"; // return only late
             default:
                 return "SELECT * FROM Comms WHERE artist_id = ?"; // default
         }
     }
-
 
     // STATS ------------------------------------------------------------------------------------
 
@@ -185,36 +187,6 @@ public class UserDAO {
     // percent of late / completed (%late)
 
     // an API to view earnings / commission qty by month in graph format or smth
-
-    // fetch all of a user's current late commissions
-    public ArrayList<Commission> fetchAllUserLateCommissions(String artist_id) {
-        ArrayList<Commission> allComms = new ArrayList<>();
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement( "SELECT * FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' AND artist_id = ?");
-            stmt.setString(1, artist_id);
-            ResultSet result = stmt.executeQuery();
-            while (result.next()) {
-                allComms.add(new Commission(
-                        result.getString("id"),
-                        result.getString("artist_id"),
-                        result.getString("commissioner_handle"),
-                        result.getString("platform"),
-                        result.getDate("date_ordered"),
-                        result.getDate("date_expected"),
-                        result.getString("size"),
-                        (result.getBigDecimal("cost")).doubleValue(),
-                        result.getString("description"),
-                        result.getString("reference_link"),
-                        result.getBoolean("payment_received"),
-                        result.getString("status")
-                ));
-            }
-            return allComms;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return allComms;
-    }
 
     // fetch # of all of a user's current late commissions
     public int countAllUserLateCommissions(String artist_id) {

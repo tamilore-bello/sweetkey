@@ -3,14 +3,28 @@ package org.example;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ViewModel {
     UserDAO ud = new UserDAO();
     User user;
 
+    // USER OPERATIONS ------------------------------------------------------------------------------------
     // return the current User.
     public User getCurrentUser() {
       return user;
+    }
+
+    // add a user to the database
+    public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        // if any of the sign-up details are invalid, fail.
+        if (isInvalidSignUpDetails(username, email, password)) return false;
+
+        // Add the passed User to the database.
+        User user = new User(username, email);
+        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password);
+        ud.addUser(user, saltedMix[0], saltedMix[1]);
+        return true;
     }
 
     // authenticate a User.
@@ -29,7 +43,8 @@ public class ViewModel {
     }
 
 
-   // add a commission to the database.
+    // COMMISSION OPERATIONS ------------------------------------------------------------------------------------
+    // add a commission to the database.
     public boolean addCommission(Commission commission) {
         if (!isInvalidCommission(commission)) {
             ud.addComm(commission);
@@ -39,32 +54,13 @@ public class ViewModel {
         }
     }
 
-    public boolean validCost(String c) {
-        try {
-            Double.parseDouble(c);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // add a user to the database
-    public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        // if any of the sign-up details are invalid, fail.
-        if (isInvalidSignUpDetails(username, email, password)) return false;
-
-        // Add the passed User to the database.
-        User user = new User(username, email);
-        byte[][] saltedMix = AuthUtils.generateSaltAndHash(password);
-        ud.addUser(user, saltedMix[0], saltedMix[1]);
-        return true;
-    }
-
     // get all Commissions for a User
     public ArrayList<Commission> getCurrentUserCommission(int order) {
         return ud.fetchAllUserComms(user.getId(), order);
     }
 
+
+    // AUTH / VALIDATION  ------------------------------------------------------------------------------------
     // validate sign-up details
     private boolean isInvalidSignUpDetails(String username, String email, char[] password) {
         if (username.isEmpty() || email.isEmpty() || password.length == 0)
@@ -84,11 +80,41 @@ public class ViewModel {
         return false;
     }
 
+    // validate commission details
     private boolean isInvalidCommission(Commission commission) {
         if (commission.getCommissioner_handle().isEmpty() || commission.getDescription().isEmpty())
             return true;
         return false;
     }
 
+    // Validate that an entered cost is a Double value
+    public boolean validCost(String c) {
+        try {
+            Double.parseDouble(c);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    // STATS  ------------------------------------------------------------------------------------
+    public int lateCommissionQty() {
+        return ud.countAllUserLateCommissions(user.getId());
+    }
+
+    public double earningsEver() {
+        return ud.amountEarned(user.getId(), 3);
+    }
+    public double earningsYear() {
+        return ud.amountEarned(user.getId(), 2);
+    }
+    public double earningsMonth() {
+        return ud.amountEarned(user.getId(), 1);
+    }
+
+    public Date getDateJoined() {
+        return user.getDate_joined();
+    }
 
 }
