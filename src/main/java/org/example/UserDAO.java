@@ -9,22 +9,17 @@ import java.util.Date;
 // an object for interacting with the database
 public class UserDAO {
 
-    // variables storing the path of the database, usernae, and password
-    private String url = "jdbc:mysql://localhost:3307/testdb?useSSL=false&allowPublicKeyRetrieval=true";
-    private String dbuser = "root";
-    private String password = "passkey";
-
-    public UserDAO() {
-        this.url = url;
-        this.dbuser = dbuser;
-        this.password = password;
-    }
+    // instance data storing the path of the database, usernae, and password
+    private final String url = "jdbc:mysql://localhost:3307/testdb?useSSL=false&allowPublicKeyRetrieval=true";
+    private final String dbuser = "root";
+    private final String password = "passkey";
 
     // establish and return a connection to the database
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, dbuser, password);
     }
 
+    // USER LOG IN / SIGN-UP ------------------------------------------------------------------------------------
     // add a new User to the database
     public void addUser(User user, byte[] salt, byte[] hash) {
         try (Connection conn = getConnection()) {
@@ -62,7 +57,6 @@ public class UserDAO {
                     "status" +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     ;
-
             PreparedStatement prepped_statement = conn.prepareStatement(add_to_comms);
             prepped_statement.setString(1, commission.getId());
             prepped_statement.setString(2, commission.getArtist_id());
@@ -78,7 +72,6 @@ public class UserDAO {
             prepped_statement.setString(12, commission.getStatus());
 
             prepped_statement.executeUpdate();
-            System.out.println("Executed");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -121,12 +114,13 @@ public class UserDAO {
         return null;
     }
 
+    // COMMISSION FETCHING ------------------------------------------------------------------------------------
     // fetch all of a User's commissions based on User id.
-    public ArrayList<Commission> fetchAllUserComms(String id) {
+    public ArrayList<Commission> fetchAllUserComms(String artist_id, int order) {
         ArrayList<Commission> allComms = new ArrayList<>();
         try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Comms WHERE artist_id = ?");
-            stmt.setString(1, id);
+            PreparedStatement stmt = conn.prepareStatement(orderByCode(order));
+            stmt.setString(1, artist_id);
 
             ResultSet result = stmt.executeQuery();
             while (result.next()) {
@@ -144,7 +138,6 @@ public class UserDAO {
                         result.getBoolean("payment_received"),
                         result.getString("status")
                 ));
-                System.out.println(1);
             }
             return allComms;
         } catch (SQLException e) {
@@ -153,45 +146,127 @@ public class UserDAO {
         return allComms;
     }
 
-    // start up the database. Create the tables if they don't already exist.
-    public void rundb() {
+    // provide the correct SQL query string where code relates to a sort type
+    private static String orderByCode(int code) {
+        // as seen in method MAIN, where
+        // soonest = 0, oldest = 1, and size = 2
+        switch (code) {
+            case 0:
+                return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY date_expected"; // order by due soonest
+            case 1:
+                return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY date_ordered"; // order by oldest - newest
+            case 2:
+                return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY CASE size " + // order by size (ascending)
+                        "WHEN 'Icon' THEN 1 " +
+                        "WHEN 'Bust' THEN 2 " +
+                        "WHEN 'Half-Body' THEN 3 " +
+                        "WHEN '3/4' THEN 4 " +
+                        "WHEN 'Full-body' THEN 5 " +
+                        "WHEN 'Chibi' THEN 6 " +
+                        "WHEN 'Reference' THEN 7 " +
+                        "ELSE 8 END";
+            default:
+                return "SELECT * FROM Comms WHERE artist_id = ?"; // default
+        }
+    }
+
+
+    // STATS ------------------------------------------------------------------------------------
+
+    // TODO
+    // commission type (bar graph)??
+    // top (50, 25, 10% of users based on timeliness)
+        // and above based on earnings
+    // advised amount witholding amount (30% of income for current tax year)
+    // percent of late / completed (%late)
+
+    // an API to view earnings / commission qty by month in graph format or smth
+
+    // fetch all of a user's current late commissions
+    public ArrayList<Commission> fetchAllUserLateCommissions(String artist_id) {
+        ArrayList<Commission> allComms = new ArrayList<>();
         try (Connection conn = getConnection()) {
-            String create_users_table = "CREATE TABLE IF NOT EXISTS Users (" +
-                    "id VARCHAR(90) NOT NULL UNIQUE PRIMARY KEY, " +
-                    "username VARCHAR(30) UNIQUE, " +
-                    "email VARCHAR(30), " +
-                    "date_joined DATE," +
-                    "salt VARBINARY(16)," +
-                    "hash VARBINARY(16)" +
-                    ")";
-            String create_comms_table = "CREATE TABLE IF NOT EXISTS Comms (" +
-                    "id VARCHAR(90) PRIMARY KEY, " +
-                    "artist_id VARCHAR(90), " +
-                    "commissioner_handle VARCHAR(30), " +
-                    "platform VARCHAR(30), " +
-                    "date_ordered DATE, " +
-                    "date_expected DATE, " +
-                    "size VARCHAR(30), " +
-                    "cost DECIMAL(10, 2), " +
-                    "description VARCHAR(100), " +
-                    "reference_link VARCHAR(120), " +
-                    "payment_received BOOLEAN DEFAULT FALSE, " +
-                    "status VARCHAR(30), " +
-                    "FOREIGN KEY (artist_id) REFERENCES Users(id)" +
-                    ")";
-            PreparedStatement create_users_if_not_exists = conn.prepareStatement(create_users_table);
-            PreparedStatement create_comms_if_not_exists = conn.prepareStatement(create_comms_table);
-
-            create_users_if_not_exists.executeUpdate();
-            create_comms_if_not_exists.executeUpdate();
-
-
+            PreparedStatement stmt = conn.prepareStatement( "SELECT * FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' AND artist_id = ?");
+            stmt.setString(1, artist_id);
+            ResultSet result = stmt.executeQuery();
+            while (result.next()) {
+                allComms.add(new Commission(
+                        result.getString("id"),
+                        result.getString("artist_id"),
+                        result.getString("commissioner_handle"),
+                        result.getString("platform"),
+                        result.getDate("date_ordered"),
+                        result.getDate("date_expected"),
+                        result.getString("size"),
+                        (result.getBigDecimal("cost")).doubleValue(),
+                        result.getString("description"),
+                        result.getString("reference_link"),
+                        result.getBoolean("payment_received"),
+                        result.getString("status")
+                ));
+            }
+            return allComms;
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
+        return allComms;
     }
 
+    // fetch # of all of a user's current late commissions
+    public int countAllUserLateCommissions(String artist_id) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement( "SELECT COUNT(*) FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' AND artist_id = ?");
+            stmt.setString(1, artist_id);
+            ResultSet result = stmt.executeQuery();
+            if (result.next()) {
+                return result.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // fetch amount earned where code relates to a date range
+    public double amountEarned(String artist_id, int code) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(selectEarningsByDateRange(code));
+            stmt.setString(1, artist_id);
+            ResultSet result = stmt.executeQuery();
+            if (result.next()) {
+                System.out.println("getting double...");
+                return (result.getDouble(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    // provide the correct SQL query string where code relates to a date range
+    private static String selectEarningsByDateRange(int code) {
+        // as seen in method MAIN, where
+        // soonest = 0, oldest = 1, and size = 2
+        switch (code) {
+            case 0:
+                return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
+                        "AND YEAR(date_ordered) = YEAR(CURDATE()) " +
+                        "AND MONTH(date_ordered) = MONTH(CURDATE()) " +
+                        "AND WEEK(date_ordered) = WEEK(CURDATE())"; // gross of current week's orders
+            case 1:
+                return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
+                        "AND YEAR(date_ordered) = YEAR(CURDATE()) " +
+                        "AND MONTH(date_ordered) = MONTH(CURDATE()) ";  // gross of current month's orders
+            case 2:
+                return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
+                        "AND YEAR(date_ordered) = YEAR(CURDATE())"; // gross of current year's orders
+            default:
+                return "SELECT SUM(cost) FROM Comms WHERE artist_id = ?"; // gross of all time's orders
+        }
+    }
+
+
+    // HELPING METHODS ------------------------------------------------------------------------------------
     // Format a Date object into a String, yyyy-MM-dd
     public String convertDateFormat (Date date) {
         return DateTimeFormatter.ofPattern("yyyy-MM-dd")

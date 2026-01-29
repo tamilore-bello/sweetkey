@@ -1,12 +1,18 @@
 package org.example;
 
+import org.example.dev.DevUtils;
+
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Enumeration;
 
 
@@ -15,10 +21,16 @@ public class Main {
     private static final ViewModel vm = new ViewModel();
 
     public static void main(String[] args) {
+        // enforce that the database actually exists.
+        // in actual production, the database will be stored
+        // on a server other than the client's computer.
+        new DevUtils().rundb();
+
         // UI can be run asynchronously and load when all the elements have loaded (its own thread)
         SwingUtilities.invokeLater(Main::swingUI);
     }
 
+    // overarching UI JFRAME
     private static void swingUI() {
         setUpGlobalFont();
 
@@ -30,8 +42,8 @@ public class Main {
         frame.setVisible(true);
     }
 
-
-    // LOGIN FRAME
+    // LOG IN AND SIGN UP ------------------------------------------------------------------------------------
+    // LOG IN
     private static JPanel loginPanel(JFrame frame) {
         JPanel root = columnPanel();
 
@@ -74,7 +86,7 @@ public class Main {
         }
     }
 
-    // SIGN UP
+    // SIGN-UP
     private static JPanel signupPanel(JFrame frame) {
         JPanel root = columnPanel();
 
@@ -118,15 +130,26 @@ public class Main {
 
     // WELCOME PAGE for a logged-in user
     private static JPanel welcomePanel(User user) {
+        // messing around
+        UserDAO ud = new UserDAO();
+        DevUtils du = new DevUtils();
+        System.out.println(ud.fetchAllUserComms(user.getId(),3));
+        System.out.println( ud.fetchAllUserLateCommissions(user.getId()));
+        System.out.println( ud.countAllUserLateCommissions(user.getId()));
+        System.out.println(ud.amountEarned(user.getId(), -1));
+
+
+
         JPanel root = columnPanel();
         JLabel header = header("Welcome, "+user.getUsername()+"!");
         header.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Upcoming Work", upWork());
-        tabs.addTab("Add a Commission", addaC());
-        tabs.addTab("Stats", new JPanel());
+        tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, 3));
+        tabs.addTab("Add a Commission", addACommissionTab(tabs));
+        tabs.addTab("Stats", statsTab(tabs));
         tabs.addTab("Settings", new JPanel());
+
 
         root.add(header);
         root.add(vspace(15));
@@ -135,57 +158,35 @@ public class Main {
         return root;
     }
 
-    // display user commissions tab
-    private static JPanel upWork() {
-        JPanel root = new JPanel(new BorderLayout());
 
+    // TABS ------------------------------------------------------------------------------------
+    // display user commissions tab
+    private static JPanel upcomingWorkTab(JTabbedPane tabs, int order) {
+        JPanel root = new JPanel();
+        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         // get all current commissions as an ArrayList
-        ArrayList<Commission> currentComms = vm.getCurrentUserCommission();
+        ArrayList<Commission> currentComms = vm.getCurrentUserCommission(order);
+
+        // Selection for display order of the listModel
+        JComboBox<String> displayBy = getDisplayOrderJComboBox(tabs, order);
 
         // propagate the ListModel for the JList with the arraylist of current User commissions
         DefaultListModel<Commission> model = new DefaultListModel<>();
         for (Commission c : currentComms) {
             model.addElement(c);
         }
+        JList<Commission> list = getCommissionJList(model);
 
-        JList<Commission> list = new JList<>(model);
-        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setFixedCellHeight(-1);
-        list.setCellRenderer((jList, c, index, isSelected, hasFocus) -> {
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
-
-            JLabel title = new JLabel(c.getSize());
-            title.setFont(title.getFont().deriveFont(Font.BOLD));
-
-            JLabel subtitle = new JLabel(
-                    "for " + c.getCommissioner_handle() + " via " + c.getPlatform()
-            );
-            subtitle.setFont(subtitle.getFont().deriveFont(Font.PLAIN, 12f));
-            subtitle.setForeground(Color.GRAY);
-
-            panel.add(title, BorderLayout.NORTH);
-            panel.add(subtitle, BorderLayout.SOUTH);
-
-            if (isSelected) {
-                panel.setBackground(jList.getSelectionBackground());
-            } else {
-                panel.setBackground(jList.getBackground());
-            }
-
-            panel.setOpaque(true);
-            return panel;
-        });
-
+        root.add(displayBy);
         // set the list in a JScrollPane so we can scroll
         JScrollPane scrollPane = new JScrollPane(list);
-        root.add(scrollPane, BorderLayout.CENTER);
+        root.add(scrollPane);
 
         return root;
     }
 
     // Add a commission tab
-    private static JPanel addaC() {
+    private static JPanel addACommissionTab(JTabbedPane tabs) {
         JPanel root = columnPanel();
         root.setBorder(BorderFactory.createEmptyBorder(60, 60, 60, 60));
 
@@ -199,14 +200,14 @@ public class Main {
 
         DateTextField dateOrderedF = new DateTextField();
         DateTextField dateExpectedF = new DateTextField();
-        JComboBox<String> paymentRecF = new JComboBox<>(new String[]{"Yes", "No"});
+        JComboBox<String> paymentRecF = new JComboBox<>(new String[]{"No", "Yes"});
         JPanel dateOrdered = labeledRow("Date Ordered:", dateOrderedF);
         JPanel dateExpected = labeledRow("Date Expected:", dateExpectedF);
-        JPanel paymentRec = labeledRow("Completed:", paymentRecF);
+        JPanel paymentRec = labeledRow("Payment Received:", paymentRecF);
 
 
         JTextField platformF = new JTextField();
-        JTextField costF = new JTextField();
+        JTextField costF = new JTextField("0");
         JTextField refF = new JTextField();
         JPanel platform = labeledRow("Platform:", platformF);
         JPanel cost = labeledRow("Cost:", costF);
@@ -215,23 +216,35 @@ public class Main {
         JComboBox<String> statusF = new JComboBox<>(new String[]{"Not Started", "In Progress", "Completed"});
         JPanel status = labeledRow("Current Status:", statusF);
 
-        JButton addComm = primaryButton("Add Commission", new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("Running");
-                vm.addCommission(new Commission(
-                        vm.getCurrentUser().getId(),
-                        handleF.getText(),
-                        platformF.getText(),
-                        dateOrderedF.getDate(),
-                        dateExpectedF.getDate(),
-                        sizeOptionRowF.getSelectedItem().toString(),
-                        Double.parseDouble(costF.getText()),
-                        descriptionF.getText(),
-                        refF.getText(),
-                       (paymentRecF.getSelectedItem() == "Yes"),
-                        statusF.getSelectedItem().toString()
-                ));
+        JButton addComm = primaryButton("Add Commission", () -> {
+            System.out.println("Running");
+            if (vm.validCost(costF.getText()) && vm.addCommission(new Commission(
+                    vm.getCurrentUser().getId(),
+                    handleF.getText(),
+                    platformF.getText(),
+                    dateOrderedF.getDate(),
+                    dateExpectedF.getDate(),
+                    sizeOptionRowF.getSelectedItem().toString(),
+                    Double.parseDouble(costF.getText()),
+                    descriptionF.getText(),
+                    refF.getText(),
+                   (paymentRecF.getSelectedItem() == "Yes"),
+                    statusF.getSelectedItem().toString())))
+            {
+                handleF.setText("");
+                platformF.setText("");
+                dateOrderedF.setDate(Date.from(Instant.now()));
+                dateExpectedF.setDate(Date.from(Instant.now()));
+                sizeOptionRowF.setSelectedIndex(0);
+                costF.setText("");
+                descriptionF.setText("");
+                refF.setText("");
+                paymentRecF.setSelectedIndex(0);
+                statusF.setSelectedIndex(0);
+
+                refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, 3), "Upcoming Work");
+            } else {
+                JOptionPane.showMessageDialog(tabs, "Please complete all fields.");
             }
         });
 
@@ -260,9 +273,76 @@ public class Main {
         root.add(vspace(15));
         root.add(centered(addComm));
         return root;
+
+
     }
 
-    // HELPING METHODS
+    private static JPanel statsTab(JTabbedPane tabs) {
+        JPanel root = columnPanel();
+        JLabel label = new JLabel("Falling for the promise of the emptiness machine...");
+
+        root.add(label);
+        return root;
+    }
+
+    // SPECIAL ITEMS
+    private static JComboBox<String> getDisplayOrderJComboBox(JTabbedPane tabs, int order) {
+        JComboBox<String> displayBy = new JComboBox<>(new String[]{
+                "Order By: Soonest Due",
+                "Order By: Oldest",
+                "Order By: Size",
+                "Order By: Default"
+        });
+        // TODO add order where LATE, where UNPAID, by PROGRESS
+        displayBy.setSelectedIndex(order);
+
+        displayBy.addActionListener(_ -> {
+            // refresh the tab with the correctly ordered list fetched from the DB
+            // in reality, we could sort results locally using less resources. However, for the sake
+            // of demonstrating proficiency with SQL queries, we do a new operation instead of using a cache
+            refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, displayBy.getSelectedIndex()), "Upcoming Work");
+        });
+
+        Dimension d = new Dimension(displayBy.getMaximumSize().width, displayBy.getPreferredSize().height);
+        displayBy.setToolTipText("Order by: ");
+        displayBy.setBorder(null);
+        displayBy.setMaximumSize(d);
+        return displayBy;
+    }
+    private static JList<Commission> getCommissionJList(DefaultListModel<Commission> model) {
+        JList<Commission> list = new JList<>(model);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setFixedCellHeight(-1);
+        list.setCellRenderer((jList, c, index, isSelected, hasFocus) -> {
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+
+            JLabel title = new JLabel(c.getSize());
+            title.setFont(title.getFont().deriveFont(Font.BOLD));
+
+            JLabel subtitle = new JLabel(
+                    "for " + c.getCommissioner_handle() + " via " + c.getPlatform()
+            );
+            subtitle.setFont(subtitle.getFont().deriveFont(Font.PLAIN, 12f));
+            subtitle.setForeground(Color.GRAY);
+
+            panel.add(title, BorderLayout.NORTH);
+            panel.add(subtitle, BorderLayout.SOUTH);
+
+            if (isSelected) {
+                panel.setBackground(jList.getSelectionBackground());
+            } else {
+                panel.setBackground(jList.getBackground());
+            }
+
+            panel.setOpaque(true);
+            return panel;
+        });
+        return list;
+    }
+
+
+    // HELPING METHODS ------------------------------------------------------------------------------------
     // aligns a panel, gives some top padding.
     private static JPanel columnPanel() {
         JPanel p = new JPanel();
@@ -298,7 +378,7 @@ public class Main {
         Dimension d = new Dimension(280, b.getPreferredSize().height);
         b.setPreferredSize(d);
         b.setMaximumSize(d);
-        b.addActionListener(e -> action.run());
+        b.addActionListener(_ -> action.run());
         return b;
     }
 
@@ -340,6 +420,12 @@ public class Main {
         frame.repaint();
     }
 
+    private static void refreshTabAndSwitch(JTabbedPane tabs, JPanel panel, String title) {
+        tabs.remove(0);
+        tabs.insertTab(title, null, panel, null, 0);
+        tabs.setSelectedIndex(0);
+    }
+
     // set the global font to every J-Object
     private static void setUpGlobalFont() {
         Font base = new Font("SF Pro Rounded", Font.PLAIN, 14);
@@ -352,4 +438,5 @@ public class Main {
             }
         }
     }
+
 }

@@ -15,8 +15,6 @@ public class ViewModel {
 
     // authenticate a User.
     public boolean welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        ud.rundb();
-
         // fetch the salt and hash for an entered username, if there is none, return fail
         byte[][] saltyMix = ud.fetchSaltAndHash(username);
         if (saltyMix == null) return false;
@@ -32,14 +30,26 @@ public class ViewModel {
 
 
    // add a commission to the database.
-    public void addCommission(Commission commission) {
-        ud.addComm(commission);
+    public boolean addCommission(Commission commission) {
+        if (!isInvalidCommission(commission)) {
+            ud.addComm(commission);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean validCost(String c) {
+        try {
+            Double.parseDouble(c);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // add a user to the database
     public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        ud.rundb();
-
         // if any of the sign-up details are invalid, fail.
         if (isInvalidSignUpDetails(username, email, password)) return false;
 
@@ -51,8 +61,8 @@ public class ViewModel {
     }
 
     // get all Commissions for a User
-    public ArrayList<Commission> getCurrentUserCommission() {
-        return ud.fetchAllUserComms(user.getId());
+    public ArrayList<Commission> getCurrentUserCommission(int order) {
+        return ud.fetchAllUserComms(user.getId(), order);
     }
 
     // validate sign-up details
@@ -73,4 +83,12 @@ public class ViewModel {
             return true;
         return false;
     }
+
+    private boolean isInvalidCommission(Commission commission) {
+        if (commission.getCommissioner_handle().isEmpty() || commission.getDescription().isEmpty())
+            return true;
+        return false;
+    }
+
+
 }

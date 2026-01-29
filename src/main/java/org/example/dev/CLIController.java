@@ -10,6 +10,7 @@ public class CLIController {
     UserDAO ud = new UserDAO();
     DevUtils devUtils = new DevUtils();
 
+
     @InternalMethod
     @Deprecated
     public void printAllUsers() {
