@@ -112,6 +112,10 @@ public class ViewModel {
     public double earningsMonth() {
         return ud.amountEarned(user.getId(), 1);
     }
+    public double earningsLast7() {
+        return ud.amountEarned(user.getId(), 0);
+    }
+
 
     public Date getDateJoined() {
         return user.getDate_joined();

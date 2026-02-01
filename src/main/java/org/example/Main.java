@@ -127,13 +127,6 @@ public class Main {
 
     // WELCOME PAGE for a logged-in user
     private static JPanel welcomePanel(User user) {
-        // messing around
-        UserDAO ud = new UserDAO();
-        DevUtils du = new DevUtils();
-        System.out.println(ud.fetchAllUserComms(user.getId(),4));
-        System.out.println( ud.countAllUserLateCommissions(user.getId()));
-        System.out.println(ud.amountEarned(user.getId(), -1));
-
         JPanel root = columnPanel();
         JLabel header = header("Welcome, "+user.getUsername()+"!");
         header.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -288,6 +281,9 @@ public class Main {
         JLabel earnedYear = new JLabel("❥·∙     Earnings this year: "+NumberFormat.getCurrencyInstance().format(vm.earningsYear()));
         // Earnings this month
         JLabel earnedMonth = new JLabel("❥·∙     Earnings this month: "+NumberFormat.getCurrencyInstance().format(vm.earningsMonth()));
+        // Earnings the last 7 days
+        JLabel earned7 = new JLabel("❥·∙     Earnings the last seven days: "+NumberFormat.getCurrencyInstance().format(vm.earningsLast7()));
+
         // Date Joined
         JLabel dateJoined = new JLabel("Joined "+ DateFormat.getDateInstance().format(vm.getDateJoined()));
 
@@ -300,6 +296,7 @@ public class Main {
         root.add(vspace(20));
         root.add(new JSeparator());
         root.add(vspace(20));
+        root.add(centered(earned7));
         root.add(centered(earnedMonth));
         root.add(centered(earnedYear));
         root.add(centered(earnedEver));

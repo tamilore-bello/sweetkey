@@ -210,7 +210,7 @@ public class UserDAO {
             stmt.setString(1, artist_id);
             ResultSet result = stmt.executeQuery();
             if (result.next()) {
-                System.out.println("getting double...");
+                System.out.println("getting double..." + result.getDouble(1));
                 return (result.getDouble(1));
             }
         } catch (SQLException e) {
@@ -226,13 +226,12 @@ public class UserDAO {
         switch (code) {
             case 0:
                 return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
-                        "AND YEAR(date_ordered) = YEAR(CURDATE()) " +
-                        "AND MONTH(date_ordered) = MONTH(CURDATE()) " +
-                        "AND WEEK(date_ordered) = WEEK(CURDATE())"; // gross of current week's orders
+                        "AND date_ordered >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) " +
+                        "AND date_ordered <= CURDATE() ";  // gross of last 7 days orders
             case 1:
                 return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
                         "AND YEAR(date_ordered) = YEAR(CURDATE()) " +
-                        "AND MONTH(date_ordered) = MONTH(CURDATE()) ";  // gross of current month's orders
+                        "AND MONTH(date_ordered) = MONTH(CURDATE())";  // gross of current month's orders
             case 2:
                 return "SELECT SUM(cost) FROM Comms WHERE artist_id = ? " +
                         "AND YEAR(date_ordered) = YEAR(CURDATE())"; // gross of current year's orders

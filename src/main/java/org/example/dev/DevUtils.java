@@ -4,7 +4,12 @@ import org.example.Commission;
 import org.example.User;
 
 import java.sql.*;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.TimeZone;
 
 // a class of utilities that are useful as i develop sweetkey, but should NEVER
 // be seen in production code
@@ -71,6 +76,21 @@ public class DevUtils {
         return allComms;
     } //ADMIN FETCH ALL COMMS
 
+    // get current UTC database time
+    @InternalMethod
+    @Deprecated
+    public String getDBDate() {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT NOW()");
+            ResultSet result = stmt.executeQuery();
+            while (result.next())
+                    return result.getString(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
     // wipes all tables without wiping the database.
     @InternalMethod
     @Deprecated
@@ -117,9 +137,15 @@ public class DevUtils {
                     "status VARCHAR(30), " +
                     "FOREIGN KEY (artist_id) REFERENCES Users(id)" +
                     ")";
+
+            String timeZone = "SET time_zone = ?";
+
             PreparedStatement create_users_if_not_exists = conn.prepareStatement(create_users_table);
             PreparedStatement create_comms_if_not_exists = conn.prepareStatement(create_comms_table);
+            PreparedStatement setTimeZone_st = conn.prepareStatement(timeZone);
+            setTimeZone_st.setString(1, String.valueOf(ZoneId.systemDefault().getRules().getOffset(Instant.now())));
 
+            setTimeZone_st.executeUpdate();
             create_users_if_not_exists.executeUpdate();
             create_comms_if_not_exists.executeUpdate();
 
