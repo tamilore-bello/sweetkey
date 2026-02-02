@@ -4,7 +4,9 @@ import java.sql.*;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 // an object for interacting with the database
 public class UserDAO {
@@ -34,44 +36,7 @@ public class UserDAO {
             prepped_statement.setBytes(5, salt);
             prepped_statement.setBytes(6, hash);
             prepped_statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
-    // add a new Commission to the database
-    public void addComm(Commission commission) {
-        try (Connection conn = getConnection()) {
-            String add_to_comms = "INSERT INTO Comms (" +
-                    "id, " +
-                    "artist_id, " +
-                    "commissioner_handle, " +
-                    "platform, " +
-                    "date_ordered, " +
-                    "date_expected, " +
-                    "size, " +
-                    "cost, " +
-                    "description, " +
-                    "reference_link, " +
-                    "payment_received," +
-                    "status" +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                    ;
-            PreparedStatement prepped_statement = conn.prepareStatement(add_to_comms);
-            prepped_statement.setString(1, commission.getId());
-            prepped_statement.setString(2, commission.getArtist_id());
-            prepped_statement.setString(3, commission.getCommissioner_handle());
-            prepped_statement.setString(4, commission.getPlatform());
-            prepped_statement.setString(5, convertDateFormat(commission.getDate_ordered()));
-            prepped_statement.setString(6, convertDateFormat(commission.getDate_expected()));
-            prepped_statement.setString(7, commission.getSize());
-            prepped_statement.setBigDecimal(8, new BigDecimal(commission.getCost()));
-            prepped_statement.setString(9, commission.getDescription());
-            prepped_statement.setString(10, commission.getReference_link());
-            prepped_statement.setBoolean(11, commission.getPaymentReceived());
-            prepped_statement.setString(12, commission.getStatus());
-
-            prepped_statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -114,13 +79,72 @@ public class UserDAO {
         } catch (SQLException e) {
             System.out.println("RESULT SET IS EMPTY");
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
-    // COMMISSION FETCHING ------------------------------------------------------------------------------------
+
+    // USER FUNCTIONS  ------------------------------------------------------------------------------------
+    // change the username of a User
+    public boolean updateUsername(String userId, String newUsername) {
+            try (Connection conn = getConnection()) {
+                String add_to_users = "UPDATE Users SET username = ? WHERE id = ?";
+
+                PreparedStatement prepped_statement = conn.prepareStatement(add_to_users);
+
+                prepped_statement.setString(1, newUsername);
+                prepped_statement.setString(2, userId);
+
+                prepped_statement.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
+    }
+
+    // change the email of a User
+    public boolean updateEmail(String userId, String newEmail) {
+            try (Connection conn = getConnection()) {
+                String add_to_users = "UPDATE Users SET email = ? WHERE id = ?";
+
+                PreparedStatement prepped_statement = conn.prepareStatement(add_to_users);
+
+                prepped_statement.setString(1, newEmail);
+                prepped_statement.setString(2, userId);
+
+                prepped_statement.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
+    }
+
+    // delete a user.
+    // Ideally, we can reinforce with password authentication as well.
+    public void deleteUser(String userId) {
+        try (Connection conn = getConnection()) {
+
+            String delete_commissions = "DELETE FROM Comms WHERE artist_id = ?";
+            PreparedStatement delete_comms = conn.prepareStatement(delete_commissions);
+            delete_comms.setString(1, userId);
+
+            String delete_this_user = "DELETE FROM Users WHERE id = ?";
+            PreparedStatement delete_user = conn.prepareStatement(delete_this_user);
+            delete_user.setString(1, userId);
+
+            delete_comms.executeUpdate();
+            delete_user.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // COMMISSION FUNCTIONS  ------------------------------------------------------------------------------------
     // fetch all of a User's commissions based on User id.
-    public ArrayList<Commission> fetchAllUserComms(String artist_id, int order) {
+    public List<Commission> fetchAllUserComms(String artist_id, int order) {
         ArrayList<Commission> allComms = new ArrayList<>();
         try (Connection conn = getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(orderByCode(order));
@@ -143,11 +167,88 @@ public class UserDAO {
                         result.getString("status")
                 ));
             }
-            return allComms;
+            return Collections.unmodifiableList(allComms);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return allComms;
+        return Collections.unmodifiableList(allComms);
+    }
+
+    // add a new Commission to the database
+    public void addComm(Commission commission) {
+        try (Connection conn = getConnection()) {
+            String add_to_comms = "INSERT INTO Comms (" +
+                    "id, " +
+                    "artist_id, " +
+                    "commissioner_handle, " +
+                    "platform, " +
+                    "date_ordered, " +
+                    "date_expected, " +
+                    "size, " +
+                    "cost, " +
+                    "description, " +
+                    "reference_link, " +
+                    "payment_received," +
+                    "status" +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    ;
+            PreparedStatement prepped_statement = conn.prepareStatement(add_to_comms);
+            prepped_statement.setString(1, commission.getId());
+            prepped_statement.setString(2, commission.getArtist_id());
+            prepped_statement.setString(3, commission.getCommissioner_handle());
+            prepped_statement.setString(4, commission.getPlatform());
+            prepped_statement.setString(5, convertDateFormat(commission.getDate_ordered()));
+            prepped_statement.setString(6, convertDateFormat(commission.getDate_expected()));
+            prepped_statement.setString(7, commission.getSize());
+            prepped_statement.setBigDecimal(8, new BigDecimal(commission.getCost()));
+            prepped_statement.setString(9, commission.getDescription());
+            prepped_statement.setString(10, commission.getReference_link());
+            prepped_statement.setBoolean(11, commission.getPaymentReceived());
+            prepped_statement.setString(12, commission.getStatus());
+
+            prepped_statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // STATS ------------------------------------------------------------------------------------
+    // fetch # of all of a user's current late commissions
+    public int countAllUserLateCommissions(String artist_id) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement( "SELECT COUNT(*) FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' AND artist_id = ?");
+            stmt.setString(1, artist_id);
+            ResultSet result = stmt.executeQuery();
+            if (result.next()) {
+                return result.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // fetch amount earned where code relates to a date range
+    public double amountEarned(String artist_id, int code) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(selectEarningsByDateRange(code));
+            stmt.setString(1, artist_id);
+            ResultSet result = stmt.executeQuery();
+            if (result.next()) {
+                return (result.getDouble(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+
+    // HELPING METHODS ------------------------------------------------------------------------------------
+    // Format a Date object into a String, yyyy-MM-dd
+    public String convertDateFormat (Date date) {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                .format(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
     }
 
     // provide the correct SQL query string where code relates to a sort type
@@ -177,48 +278,6 @@ public class UserDAO {
         }
     }
 
-    // STATS ------------------------------------------------------------------------------------
-
-    // TODO
-    // commission type (bar graph)??
-    // top (50, 25, 10% of users based on timeliness)
-        // and above based on earnings
-    // advised amount witholding amount (30% of income for current tax year)
-    // percent of late / completed (%late)
-
-    // an API to view earnings / commission qty by month in graph format or smth
-
-    // fetch # of all of a user's current late commissions
-    public int countAllUserLateCommissions(String artist_id) {
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement( "SELECT COUNT(*) FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' AND artist_id = ?");
-            stmt.setString(1, artist_id);
-            ResultSet result = stmt.executeQuery();
-            if (result.next()) {
-                return result.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    // fetch amount earned where code relates to a date range
-    public double amountEarned(String artist_id, int code) {
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(selectEarningsByDateRange(code));
-            stmt.setString(1, artist_id);
-            ResultSet result = stmt.executeQuery();
-            if (result.next()) {
-                System.out.println("getting double..." + result.getDouble(1));
-                return (result.getDouble(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
     // provide the correct SQL query string where code relates to a date range
     private static String selectEarningsByDateRange(int code) {
         // as seen in method MAIN, where
@@ -238,13 +297,5 @@ public class UserDAO {
             default:
                 return "SELECT SUM(cost) FROM Comms WHERE artist_id = ?"; // gross of all time's orders
         }
-    }
-
-
-    // HELPING METHODS ------------------------------------------------------------------------------------
-    // Format a Date object into a String, yyyy-MM-dd
-    public String convertDateFormat (Date date) {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                .format(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
     }
 }

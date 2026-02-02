@@ -4,6 +4,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class ViewModel {
     UserDAO ud = new UserDAO();
@@ -42,6 +43,33 @@ public class ViewModel {
         }
     }
 
+    // change a username
+    public boolean updateUsername(String newUsername) {
+        if (isUsernameValid(newUsername) && !(newUsername.equals(user.getUsername()))) {
+            if (ud.updateUsername(user.getId(), newUsername)) {
+                user = ud.fetchUser(newUsername);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // change an email
+    public boolean updateEmail(String newEmail) {
+        if (isEmailValid(newEmail) && !(newEmail.equals(user.getEmail()))) {
+            if (ud.updateEmail(user.getId(), newEmail)) {
+                user.setEmail(newEmail);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // delete a User
+    public void deleteUser() {
+        ud.deleteUser(user.getId());
+        user = null;
+    }
 
     // COMMISSION OPERATIONS ------------------------------------------------------------------------------------
     // add a commission to the database.
@@ -55,7 +83,7 @@ public class ViewModel {
     }
 
     // get all Commissions for a User
-    public ArrayList<Commission> getCurrentUserCommission(int order) {
+    public List<Commission> getCurrentUserCommission(int order) {
         return ud.fetchAllUserComms(user.getId(), order);
     }
 
@@ -63,7 +91,9 @@ public class ViewModel {
     // AUTH / VALIDATION  ------------------------------------------------------------------------------------
     // validate sign-up details
     private boolean isInvalidSignUpDetails(String username, String email, char[] password) {
-        if (username.isEmpty() || email.isEmpty() || password.length == 0)
+        if (isUsernameValid(username) == false)
+            return true;
+        if (email.isBlank() || password.length == 0)
             return true;
         if (!email.contains("@"))
             return true;
@@ -75,14 +105,28 @@ public class ViewModel {
             return true;
         if (password.length < 8)
             return true;
-        if (!(ud.fetchUser(username) == null))
-            return true;
         return false;
+    }
+
+    private boolean isUsernameValid (String username) {
+        if ((ud.fetchUser(username) != null))
+            return false;
+        if (username.isBlank())
+            return false;
+        return true;
+    }
+
+    public boolean isEmailValid(String email) {
+        if (email.isBlank())
+            return false;
+        if (!email.contains("@"))
+            return false;
+        return true;
     }
 
     // validate commission details
     private boolean isInvalidCommission(Commission commission) {
-        if (commission.getCommissioner_handle().isEmpty() || commission.getDescription().isEmpty())
+        if (commission.getCommissioner_handle().isBlank() || commission.getDescription().isBlank())
             return true;
         return false;
     }
@@ -115,7 +159,6 @@ public class ViewModel {
     public double earningsLast7() {
         return ud.amountEarned(user.getId(), 0);
     }
-
 
     public Date getDateJoined() {
         return user.getDate_joined();

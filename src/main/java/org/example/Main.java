@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 
 
 public class Main {
@@ -149,8 +150,8 @@ public class Main {
     private static JPanel upcomingWorkTab(JTabbedPane tabs, int order) {
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
-        // get all current commissions as an ArrayList
-        ArrayList<Commission> currentComms = vm.getCurrentUserCommission(order);
+        // get all current commissions as a List
+        List<Commission> currentComms = vm.getCurrentUserCommission(order);
 
         // Selection for display order of the listModel
         JComboBox<String> displayBy = getDisplayOrderJComboBox(tabs, order);
@@ -202,7 +203,6 @@ public class Main {
         JPanel status = labeledRow("Current Status:", statusF);
 
         JButton addComm = primaryButton("Add Commission", () -> {
-            System.out.println("Running");
             if (vm.validCost(costF.getText()) && vm.addCommission(new Commission(
                     vm.getCurrentUser().getId(),
                     handleF.getText(),
@@ -284,6 +284,8 @@ public class Main {
         // Earnings the last 7 days
         JLabel earned7 = new JLabel("❥·∙     Earnings the last seven days: "+NumberFormat.getCurrencyInstance().format(vm.earningsLast7()));
 
+        JLabel estWitholding = new JLabel("❥·∙     Recommended witholding: "+NumberFormat.getCurrencyInstance().format(vm.earningsYear()*0.3));
+
         // Date Joined
         JLabel dateJoined = new JLabel("Joined "+ DateFormat.getDateInstance().format(vm.getDateJoined()));
 
@@ -293,16 +295,19 @@ public class Main {
         root.add(new JSeparator());
         root.add(vspace(20));
         root.add(centered(currentLateQty));
-        root.add(vspace(20));
+        root.add(vspace(5));
         root.add(new JSeparator());
         root.add(vspace(20));
         root.add(centered(earned7));
         root.add(centered(earnedMonth));
         root.add(centered(earnedYear));
         root.add(centered(earnedEver));
-        root.add(vspace(20));
+        root.add(vspace(5));
         root.add(new JSeparator());
-        root.add(vspace(300));
+        root.add(vspace(30));
+        root.add(centered(estWitholding));
+        root.add(vspace(10));
+        root.add(new JSeparator());
         root.add(centered(dateJoined));
 
         return root;
@@ -321,8 +326,15 @@ public class Main {
             @Override
             public void run() {
                 // TODO implement
+                    if (vm.updateUsername(changeUsernameF.getText())) {
+                        JOptionPane.showMessageDialog(tabs, "Username change successful! Please restart to view changes.");
+                    } else {
+                        JOptionPane.showMessageDialog(tabs, "Username must not be blank.\nUsername cannot be " +
+                                "used by another user.\nCannot be your current Username.");
+                    }
             }
         }));
+
         Dimension d = new Dimension(300, usernameButton.getPreferredSize().height);
         usernameButton.setPreferredSize(d);
         usernameButton.setMaximumSize(d);
@@ -334,8 +346,12 @@ public class Main {
         JPanel emailButton = centered(primaryButton("Change Email", new Runnable() {
             @Override
             public void run() {
-                // TODO implement
-            }
+                if (vm.updateEmail(changeEmailF.getText())) {
+                    JOptionPane.showMessageDialog(tabs, "Email change successful! Please restart to view changes.");
+                } else {
+                    JOptionPane.showMessageDialog(tabs, "Email must not be blank.\nEmail must contain a valid " +
+                            "email address.\nCannot be your current email.");
+                }            }
         }));
         emailButton.setPreferredSize(d);
         emailButton.setMaximumSize(d);
@@ -343,7 +359,14 @@ public class Main {
         JButton deleteAccountButton = primaryButton("Delete Account", new Runnable() {
                     @Override
                     public void run() {
-
+                        JFrame frame = (JFrame) tabs.getTopLevelAncestor();
+                        int n = JOptionPane.showConfirmDialog(frame, "This action cannot be undone.\nContinue anyways?");
+                        System.out.println(n);
+                        if (n == 0) { // if option for YES is selected...
+                            vm.deleteUser();
+                            frame.dispose();
+                            SwingUtilities.invokeLater(Main::swingUI);
+                        }
                     }
                 });
         deleteAccountButton.setOpaque(true);
