@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 import java.text.NumberFormat;
 import java.time.Instant;
 
@@ -7,8 +7,8 @@ import java.util.Date;
 import java.util.UUID;
 
 public class Commission {
-    private String id;
-    private String artist_id;
+    private final String id;
+    private final String artist_id;
     private String commissioner_handle;
     private String platform;
     private Date date_ordered;

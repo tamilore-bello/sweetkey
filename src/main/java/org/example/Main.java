@@ -1,10 +1,12 @@
 package org.example;
 
-import org.example.dev.DevUtils;
+import org.example.model.Commission;
+import org.example.model.User;
+import org.example.utils.DateTextField;
+import org.example.utils.TestUtils;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -24,7 +26,7 @@ public class Main {
         // enforce that the database actually exists.
         // in actual production, the database will be stored
         // on a server other than the client's computer.
-        new DevUtils().rundb();
+        new TestUtils().rundb();
 
         // UI can be run asynchronously and load when all the elements have loaded (its own thread)
         SwingUtilities.invokeLater(Main::swingUI);
@@ -150,7 +152,6 @@ public class Main {
     // TABS ------------------------------------------------------------------------------------
     // display user commissions tab
     private static JPanel upcomingWorkTab(JTabbedPane tabs, UserDAO.OrderCode order) {
-        System.out.println(order);
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         // get all current commissions as a List
@@ -172,16 +173,13 @@ public class Main {
 
         JDialog d = new JDialog();
 
-        list.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()) {
-                    d.dispose();
-                    d.setContentPane(getCommissionDetailPanel(list.getSelectedValue()));
-                    d.setLocation(800, 200);
-                    d.setSize(500, 500);
-                    d.setVisible(true);
-                }
+        list.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                d.dispose();
+                d.setContentPane(getCommissionDetailPanel(list.getSelectedValue()));
+                d.setLocation(800, 200);
+                d.setSize(500, 500);
+                d.setVisible(true);
             }
         });
 
@@ -360,32 +358,25 @@ public class Main {
         changeEmailF.setMaximumSize(new Dimension(changeUsernameF.getMaximumSize().width, changeUsernameF.getPreferredSize().height));
         JPanel emailRowP = labeledRow("Former Email: "+vm.getCurrentUser().getEmail(), (JComponent) Box.createRigidArea(new Dimension(300, 0)));
         JPanel emailRow = labeledRow("Change Email: ", changeEmailF);
-        JPanel emailButton = centered(primaryButton("Change Email", new Runnable() {
-            @Override
-            public void run() {
-                if (vm.updateEmail(changeEmailF.getText())) {
-                    JOptionPane.showMessageDialog(tabs, "Email change successful! Please restart to view changes.");
-                } else {
-                    JOptionPane.showMessageDialog(tabs, "Email must not be blank.\nEmail must contain a valid " +
-                            "email address.\nCannot be your current email.");
-                }            }
-        }));
+        JPanel emailButton = centered(primaryButton("Change Email", () -> {
+            if (vm.updateEmail(changeEmailF.getText())) {
+                JOptionPane.showMessageDialog(tabs, "Email change successful! Please restart to view changes.");
+            } else {
+                JOptionPane.showMessageDialog(tabs, "Email must not be blank.\nEmail must contain a valid " +
+                        "email address.\nCannot be your current email.");
+            }            }));
         emailButton.setPreferredSize(d);
         emailButton.setMaximumSize(d);
 
-        JButton deleteAccountButton = primaryButton("Delete Account", new Runnable() {
-                    @Override
-                    public void run() {
-                        JFrame frame = (JFrame) tabs.getTopLevelAncestor();
-                        int n = JOptionPane.showConfirmDialog(frame, "This action cannot be undone.\nContinue anyways?");
-                        System.out.println(n);
-                        if (n == 0) { // if option for YES is selected...
-                            vm.deleteUser();
-                            frame.dispose();
-                            SwingUtilities.invokeLater(Main::swingUI);
-                        }
-                    }
-                });
+        JButton deleteAccountButton = primaryButton("Delete Account", () -> {
+            JFrame frame = (JFrame) tabs.getTopLevelAncestor();
+            int n = JOptionPane.showConfirmDialog(frame, "This action cannot be undone.\nContinue anyways?");
+            if (n == 0) { // if option for YES is selected...
+                vm.deleteUser();
+                frame.dispose();
+                SwingUtilities.invokeLater(Main::swingUI);
+            }
+        });
         deleteAccountButton.setOpaque(true);
         deleteAccountButton.setForeground(Color.red);
         JPanel deleteAccountP = centered(deleteAccountButton);

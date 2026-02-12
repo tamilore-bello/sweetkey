@@ -1,5 +1,9 @@
 package org.example;
 
+import org.example.model.Commission;
+import org.example.model.User;
+import org.example.utils.AuthUtils;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;

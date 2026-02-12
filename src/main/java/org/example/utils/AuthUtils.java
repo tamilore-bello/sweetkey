@@ -1,4 +1,4 @@
-package org.example;
+package org.example.utils;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
