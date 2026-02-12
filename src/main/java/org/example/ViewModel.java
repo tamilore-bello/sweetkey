@@ -2,7 +2,7 @@ package org.example;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class ViewModel {
     }
 
     // add a user to the database
-    public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public boolean addUser(String username, String email, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException, SQLException {
         // if any of the sign-up details are invalid, fail.
         if (isInvalidSignUpDetails(username, email, password)) return false;
 
@@ -29,7 +29,7 @@ public class ViewModel {
     }
 
     // authenticate a User.
-    public boolean welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public boolean welcomeUser(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException, SQLException {
         // fetch the salt and hash for an entered username, if there is none, return fail
         byte[][] saltyMix = ud.fetchSaltAndHash(username);
         if (saltyMix == null) return false;
@@ -83,15 +83,15 @@ public class ViewModel {
     }
 
     // get all Commissions for a User
-    public List<Commission> getCurrentUserCommission(int order) {
-        return ud.fetchAllUserComms(user.getId(), order);
+    public List<Commission> getCurrentUserCommission(UserDAO.OrderCode code) {
+        return ud.fetchAllUserComms(user.getId(), code);
     }
 
 
     // AUTH / VALIDATION  ------------------------------------------------------------------------------------
     // validate sign-up details
     private boolean isInvalidSignUpDetails(String username, String email, char[] password) {
-        if (isUsernameValid(username) == false)
+        if (!isUsernameValid(username))
             return true;
         if (email.isBlank() || password.length == 0)
             return true;
@@ -164,4 +164,24 @@ public class ViewModel {
         return user.getDate_joined();
     }
 
+    public UserDAO.OrderCode getOrder(int i) {
+        switch(i) {
+            case 0: return UserDAO.OrderCode.DUE_SOONEST;
+            case 1: return UserDAO.OrderCode.OLD_TO_NEW;
+            case 2: return UserDAO.OrderCode.SIZE_ASCENDING;
+            case 3: return UserDAO.OrderCode.LATE_ONLY;
+            case 4: return UserDAO.OrderCode.DEFAULT;
+        }
+        return UserDAO.OrderCode.DEFAULT;
+    }
+    public int getIntFromOrder(UserDAO.OrderCode c) {
+        switch(c) {
+            case UserDAO.OrderCode.DUE_SOONEST: return 0;
+            case UserDAO.OrderCode.OLD_TO_NEW: return 1;
+            case UserDAO.OrderCode.SIZE_ASCENDING: return 2;
+            case UserDAO.OrderCode.LATE_ONLY: return 3;
+            case UserDAO.OrderCode.DEFAULT: return 4;
+        }
+        return 4;
+    }
 }

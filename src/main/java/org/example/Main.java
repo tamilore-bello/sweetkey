@@ -3,6 +3,8 @@ package org.example;
 import org.example.dev.DevUtils;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -133,7 +135,7 @@ public class Main {
         header.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, 4));
+        tabs.addTab("Upcoming Work", upcomingWorkTab(tabs, UserDAO.OrderCode.DEFAULT));
         tabs.addTab("Add a Commission", addACommissionTab(tabs));
         tabs.addTab("Stats", statsTab(tabs));
         tabs.addTab("Settings", settingsTab(tabs));
@@ -147,7 +149,8 @@ public class Main {
 
     // TABS ------------------------------------------------------------------------------------
     // display user commissions tab
-    private static JPanel upcomingWorkTab(JTabbedPane tabs, int order) {
+    private static JPanel upcomingWorkTab(JTabbedPane tabs, UserDAO.OrderCode order) {
+        System.out.println(order);
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         // get all current commissions as a List
@@ -158,15 +161,29 @@ public class Main {
 
         // propagate the ListModel for the JList with the arraylist of current User commissions
         DefaultListModel<Commission> model = new DefaultListModel<>();
-        for (Commission c : currentComms) {
-            model.addElement(c);
-        }
+        for (Commission c : currentComms) { model.addElement(c); }
         JList<Commission> list = getCommissionJList(model);
+
 
         root.add(displayBy);
         // set the list in a JScrollPane so we can scroll
         JScrollPane scrollPane = new JScrollPane(list);
         root.add(scrollPane);
+
+        JDialog d = new JDialog();
+
+        list.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    d.dispose();
+                    d.setContentPane(getCommissionDetailPanel(list.getSelectedValue()));
+                    d.setLocation(800, 200);
+                    d.setSize(500, 500);
+                    d.setVisible(true);
+                }
+            }
+        });
 
         return root;
     }
@@ -227,7 +244,7 @@ public class Main {
                 paymentRecF.setSelectedIndex(0);
                 statusF.setSelectedIndex(0);
 
-                refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, 4), "Upcoming Work");
+                refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, UserDAO.OrderCode.DEFAULT), "Upcoming Work");
             } else {
                 JOptionPane.showMessageDialog(tabs, "Please complete all fields.");
             }
@@ -388,7 +405,7 @@ public class Main {
     }
 
     // SPECIAL ITEMS
-    private static JComboBox<String> getDisplayOrderJComboBox(JTabbedPane tabs, int order) {
+    private static JComboBox<String> getDisplayOrderJComboBox(JTabbedPane tabs, UserDAO.OrderCode order) {
         JComboBox<String> displayBy = new JComboBox<>(new String[]{
                 "Order By: Soonest Due",
                 "Order By: Oldest",
@@ -397,13 +414,13 @@ public class Main {
                 "Order By: Default"
         });
         // TODO add order where LATE, where UNPAID, by PROGRESS
-        displayBy.setSelectedIndex(order);
 
+        displayBy.setSelectedIndex(vm.getIntFromOrder(order));
         displayBy.addActionListener(_ -> {
             // refresh the tab with the correctly ordered list fetched from the DB
             // in reality, we could sort results locally using less resources. However, for the sake
             // of demonstrating proficiency with SQL queries, we do a new operation instead of using a cache
-            refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, displayBy.getSelectedIndex()), "Upcoming Work");
+            refreshTabAndSwitch(tabs, upcomingWorkTab(tabs, vm.getOrder(displayBy.getSelectedIndex())), "Upcoming Work");
         });
 
         Dimension d = new Dimension(displayBy.getMaximumSize().width, displayBy.getPreferredSize().height);
@@ -412,6 +429,7 @@ public class Main {
         displayBy.setMaximumSize(d);
         return displayBy;
     }
+
     private static JList<Commission> getCommissionJList(DefaultListModel<Commission> model) {
         JList<Commission> list = new JList<>(model);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -432,11 +450,16 @@ public class Main {
             panel.add(title, BorderLayout.NORTH);
             panel.add(subtitle, BorderLayout.SOUTH);
 
+
             if (isSelected) {
-                panel.setBackground(jList.getSelectionBackground());
+                {
+                    panel.setBackground(jList.getSelectionBackground());
+                }
             } else {
                 panel.setBackground(jList.getBackground());
             }
+
+
 
             panel.setOpaque(true);
             return panel;
@@ -444,6 +467,30 @@ public class Main {
         return list;
     }
 
+    private static JPanel getCommissionDetailPanel(Commission c) {
+        JPanel panel = columnPanel();
+        JLabel header = header("Commission for "+c.getCommissioner_handle());
+        JLabel line1 = new JLabel("<html><b>"+c.getSize()+"</b> worth <b>"+NumberFormat.getCurrencyInstance(Locale.US).format(c.getCost())+"</b></html>");
+        JLabel line2 = new JLabel("<html>Ordered via <b>"+c.getPlatform()+"</b> on <b>"+c.getDate_ordered().toString()+"</b>, expected <b>"+c.getDate_expected()+"</b></html>");
+        JLabel line4;
+        if (c.getPaymentReceived()) line4 = new JLabel("<html>Payment <b>received</b></html>"); else line4 = new JLabel("<html>Payment <b>not received</b></html>");
+        JLabel line5 = new JLabel("Description: "+c.getDescription());
+        JLabel line6 = new JLabel("Reference Link: "+c.getReference_link());
+        JLabel line7 = new JLabel("<html>Status: <b>"+c.getStatus()+"</b></html>");
+
+        panel.add(header);
+        panel.add(new JSeparator());
+        panel.add(vspace(20));
+        panel.add(centered(line1));
+        panel.add(centered(line2));
+        panel.add(centered(line4));
+        panel.add(centered(line5));
+        panel.add(centered(line6));
+        panel.add(centered(line7));
+        panel.add(vspace(40));
+
+        return panel;
+    }
 
     // HELPING METHODS ------------------------------------------------------------------------------------
     // aligns a panel, gives some top padding.
@@ -541,4 +588,6 @@ public class Main {
             }
         }
     }
+
+
 }

@@ -23,8 +23,8 @@ public class UserDAO {
 
     // USER LOG IN / SIGN-UP ------------------------------------------------------------------------------------
     // add a new User to the database
-    public void addUser(User user, byte[] salt, byte[] hash) {
-        try (Connection conn = getConnection()) {
+    public void addUser(User user, byte[] salt, byte[] hash) throws SQLException {
+        Connection conn = getConnection();
             String add_to_users = "INSERT INTO Users (id, username, email, date_joined, salt, hash) VALUES (?, ?, ?, ?, ?, ?)";
 
             PreparedStatement prepped_statement = conn.prepareStatement(add_to_users);
@@ -36,25 +36,22 @@ public class UserDAO {
             prepped_statement.setBytes(5, salt);
             prepped_statement.setBytes(6, hash);
             prepped_statement.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            conn.close();
     }
 
     // fetch the salt and hash for a User password authentication
-    public byte[][] fetchSaltAndHash(String username) {
-        try (Connection conn = getConnection()) {
+    public byte[][] fetchSaltAndHash(String username) throws SQLException{
+        Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement("SELECT salt, hash FROM Users WHERE username = ?");
             stmt.setString(1, username);
 
             ResultSet result = stmt.executeQuery();
             if (result.next())
+
                 return new byte[][] {result.getBytes("salt"), result.getBytes("hash")};
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+            else
+                return null;
+
     }
 
     // fetch a User based on their Username, used for fetching a user post-auth and for checking that a Username
@@ -66,21 +63,17 @@ public class UserDAO {
 
             ResultSet result = stmt.executeQuery();
             result.next();
-            try {
-                return new User(
-                        result.getString("id"),
-                        result.getString("username"),
-                        result.getString("email"),
-                        result.getDate("date_joined")
-                );
-            } catch (SQLException e){
-                return null;
-            }
+            return new User(
+                result.getString("id"),
+                result.getString("username"),
+                result.getString("email"),
+                result.getDate("date_joined")
+            );
         } catch (SQLException e) {
-            System.out.println("RESULT SET IS EMPTY");
+            System.out.println("RESULT SET IS EMPTY or USER DOESN'T EXIST");
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
 
@@ -136,18 +129,18 @@ public class UserDAO {
 
             delete_comms.executeUpdate();
             delete_user.executeUpdate();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
     }
 
     // COMMISSION FUNCTIONS  ------------------------------------------------------------------------------------
     // fetch all of a User's commissions based on User id.
-    public List<Commission> fetchAllUserComms(String artist_id, int order) {
+    public List<Commission> fetchAllUserComms(String artist_id, OrderCode code) {
         ArrayList<Commission> allComms = new ArrayList<>();
         try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(orderByCode(order));
+            PreparedStatement stmt = conn.prepareStatement(orderByCode(code));
             stmt.setString(1, artist_id);
 
             ResultSet result = stmt.executeQuery();
@@ -167,10 +160,13 @@ public class UserDAO {
                         result.getString("status")
                 ));
             }
+            conn.close();
             return Collections.unmodifiableList(allComms);
         } catch (SQLException e) {
+
             e.printStackTrace();
         }
+
         return Collections.unmodifiableList(allComms);
     }
 
@@ -200,7 +196,7 @@ public class UserDAO {
             prepped_statement.setString(5, convertDateFormat(commission.getDate_ordered()));
             prepped_statement.setString(6, convertDateFormat(commission.getDate_expected()));
             prepped_statement.setString(7, commission.getSize());
-            prepped_statement.setBigDecimal(8, new BigDecimal(commission.getCost()));
+            prepped_statement.setBigDecimal(8,  BigDecimal.valueOf(commission.getCost()));
             prepped_statement.setString(9, commission.getDescription());
             prepped_statement.setString(10, commission.getReference_link());
             prepped_statement.setBoolean(11, commission.getPaymentReceived());
@@ -252,15 +248,15 @@ public class UserDAO {
     }
 
     // provide the correct SQL query string where code relates to a sort type
-    private static String orderByCode(int code) {
+    private static String orderByCode(OrderCode code) {
         // as seen in method MAIN, where
         // soonest = 0, oldest = 1, and size = 2
         switch (code) {
-            case 0:
+            case DUE_SOONEST:
                 return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY date_expected"; // order by due soonest
-            case 1:
+            case OLD_TO_NEW:
                 return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY date_ordered"; // order by oldest - newest
-            case 2:
+            case SIZE_ASCENDING:
                 return "SELECT * FROM Comms WHERE artist_id = ? ORDER BY CASE size " + // order by size (ascending)
                         "WHEN 'Icon' THEN 1 " +
                         "WHEN 'Bust' THEN 2 " +
@@ -270,7 +266,7 @@ public class UserDAO {
                         "WHEN 'Chibi' THEN 6 " +
                         "WHEN 'Reference' THEN 7 " +
                         "ELSE 8 END";
-            case 3:
+            case LATE_ONLY:
                 return "SELECT * FROM Comms WHERE date_expected < CURDATE() AND status != 'Completed' " +
                         "AND artist_id = ? ORDER BY date_expected"; // return only late
             default:
@@ -298,4 +294,20 @@ public class UserDAO {
                 return "SELECT SUM(cost) FROM Comms WHERE artist_id = ?"; // gross of all time's orders
         }
     }
+
+    // enums for selectEarningsByDateRange
+    public enum OrderCode {
+        DUE_SOONEST,
+        OLD_TO_NEW,
+        SIZE_ASCENDING,
+        LATE_ONLY,
+        ARCHIVED_ONLY,
+        ALL,
+        DEFAULT
+    }
+
+
+
 }
+
+

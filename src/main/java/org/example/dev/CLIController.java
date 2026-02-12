@@ -4,6 +4,7 @@ import org.example.*;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 public class CLIController {
@@ -61,7 +62,7 @@ public class CLIController {
 
     @InternalMethod
     @Deprecated
-    public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public void addUser() throws NoSuchAlgorithmException, InvalidKeySpecException, SQLException {
         Scanner scanner = new Scanner(System.in);
         String username;
         String password;

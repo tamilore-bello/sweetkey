@@ -149,6 +149,7 @@ public class DevUtils {
             create_users_if_not_exists.executeUpdate();
             create_comms_if_not_exists.executeUpdate();
 
+            System.out.println("done!");
 
         } catch (SQLException e) {
             e.printStackTrace();
