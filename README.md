@@ -5,11 +5,12 @@ commissions and store data associated with them, such as date ordered, due date,
 
 The goal for sweetkey is to create an application where users can store, manage, and keep track of various commissions, as well as store their commission history.  
 
-
+<br><br>
 **What inspired it?**
 > I love art, I’m a digital artist who sometimes takes on commissions for fun myself. I haven’t seen any commission tracking applications that are widely accepted in the art community, so I thought a fun project would be to draw one up a realistic tool that could support artists, while showcasing my knowledge of basic backend architecture and structures.
 > It was a subject area I was personally familiar with, and passionate about.  
-> 
+
+<br><br>
 **How I built Sweetkey**
 > First, I built the core model with two objects: Artist and Commission.
 > Then I introduced docker and researched + tested SQL database containerized DB
