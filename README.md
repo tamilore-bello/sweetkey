@@ -11,7 +11,7 @@ The goal for sweetkey is to create an application where users can store, manage,
 > It was a subject area I was personally familiar with, and passionate about.  
 
 <br><br>
-**How I built Sweetkey**
+**How I built Sweetkey.**
 > First, I built the core model with two objects: Artist and Commission.<br>
 > Then I introduced docker and researched + tested SQL database containerized DB<br>
 > Then, I worked on the minimum database functions i needed, such as creation of users and commissions and fetching. I mapped each model to a respective SQL table and declared foreign keys and created a DAO (data access object) for it.<br>
