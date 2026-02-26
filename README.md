@@ -6,14 +6,13 @@ commissions and store data associated with them, such as date ordered, due date,
 The goal for sweetkey is to create an application where users can store, manage, and keep track of various commissions, as well as store their commission history.   
 
 **Technical Highlights of Sweetkey**
-> Layered architecture: Swing UI, business logic (ViewModel), and data access (DAO).
-> Designed a relational schema with foreign key relationships (between Users and Commissions)
-> Used JDBC with prepared statements and parameter binding (as opposed to SQL injection).
-> Used salted password hashing methods as opposed storing plain text.
-> Used dynamic aggregation queries -- the aggregation is dependent on enum-based input
-> Wrote analytical queries for metrics related to earnings, overdue detection, and custom sorting
+> Layered architecture: Swing UI, business logic (ViewModel), and data access (DAO). <br>
+> Designed a relational schema with foreign key relationships (between Users and Commissions) <br>
+> Used JDBC with prepared statements and parameter binding (as opposed to SQL injection). <br>
+> Used salted password hashing methods as opposed storing plain text.<br>
+> Used dynamic aggregation queries -- the aggregation is dependent on enum-based input <br>
+> Wrote analytical queries for metrics related to earnings, overdue detection, and custom sorting <br>
 > Cleared sensitive password data from memory after authentication.
-
 
 <br><br>
 **What inspired it?**
